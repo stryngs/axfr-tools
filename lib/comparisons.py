@@ -7,6 +7,17 @@ class compare(object):
 		pass
 
 	def domains(self):
+		''' SQL style Right join comparison
+		
+		Consider domains previously scanned as table scanned
+		Consider list of domains to scan as table todo
+		Both tables have a single column, domain
+		SELECT t.domain
+		FROM scanned S
+		RIGHT JOIN todo T
+		ON S.domain = T.domain
+		WHERE S.domain IS NULL;
+		'''		
 		## Create the comparisons to prevent re-digging
 		oFile = raw_input("List of domains previously scanned?\n")
 		nFile = raw_input("List of domains to scan?\n")
