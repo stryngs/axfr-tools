@@ -1,9 +1,6 @@
 import sqlite3 as lite
 import csv, sys, os, re, shutil, subprocess
 
-## To-Do:
-	## Prevent double nameserver entry...
-
 class builder(object):
 	''' This class builds or adds on to a pre-existing sqlite3 database '''
 
@@ -72,9 +69,9 @@ class builder(object):
 		if con:
 			db.execute("CREATE TABLE IF NOT EXISTS axfr(dm TEXT, own TEXT, ttl TEXT, rr TEXT, data TEXT)")
 			db.execute("CREATE TABLE IF NOT EXISTS dm2ns(dm TEXT, ns TEXT)")
-			db.execute("CREATE TABLE IF NOT EXISTS scanned(dm TEXT)")
-			db.execute("CREATE TABLE IF NOT EXISTS domains(dm TEXT)")
-			db.execute("CREATE TABLE IF NOT EXISTS nameservers(ns TEXT)")
+			db.execute("CREATE TABLE IF NOT EXISTS scanned(dm TEXT, UNIQUE(dm))")
+			db.execute("CREATE TABLE IF NOT EXISTS domains(dm TEXT, UNIQUE(dm))")
+			db.execute("CREATE TABLE IF NOT EXISTS nameservers(ns TEXT, UNIQUE(ns))")
 			con.close()
 			con = None
 
@@ -169,16 +166,20 @@ class builder(object):
 		nameserversFile.close()
 
 	def sColumn(self, db, File, Table):
+		''' Update single columns
+		Deal with double nameserver entries
+		'''
 		iFile = open(File, 'r')
 		while True:
 			iRow = iFile.readline().rstrip()
 			if not iRow:
 				break
-			db.execute("INSERT INTO %s VALUES(?);" % Table, (iRow,))
+			db.execute("INSERT OR IGNORE INTO %s VALUES(?);" % Table, (iRow,))
 		iFile.close()
 
 
 	def dColumn(self, con, File, Table):
+		''' Update multiple columns '''
 		with open(File, 'r') as iFile:
 			rows = csv.reader(iFile, delimiter=',')
 			con.executemany("INSERT INTO '%s' VALUES (?, ?)" % Table, rows)
