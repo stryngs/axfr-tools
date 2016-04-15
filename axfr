@@ -47,8 +47,9 @@ def main(args):
 		sys.exit(0)
 
 	if args.s:
+		nServer = raw_input('Which nameserver to query for?\n')
 		if args.s[0] == 'gwebtools':
-			scrape = scraper()
+			scrape = scraper(nServer)
 			scrape.gwebtools()
 		sys.exit(0)
 
