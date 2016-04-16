@@ -9,99 +9,98 @@ from lib.queries import queries
 from lib.scraper import scraper
 
 def main(args):
-	if args.b:
-		build = builder()
-		build.parser()
-		build.data_creation()
-		build.db_mod()
-		sys.exit(0)
+    if args.b:
+        build = builder()
+        build.parser()
+        build.data_creation()
+        build.db_mod()
+        sys.exit(0)
 
-	if args.c:
-		diff = compare()
-		diff.domains()
-		sys.exit(0)
+    if args.c:
+        diff = compare()
+        diff.domains()
+        sys.exit(0)
 
-	if args.m:
-		bDir = os.getcwd()
-		diff = compare()
-		combine = merger()
-		d, f = diff.recurser(bDir)
-		combine.digs(d, f)
-		sys.exit(0)
+    if args.m:
+        bDir = os.getcwd()
+        diff = compare()
+        combine = merger()
+        d, f = diff.recurser(bDir)
+        combine.digs(d, f)
+        sys.exit(0)
 
-	if args.q:
-		if args.q[0] == 'domainCount':
-			query = queries('domainCount')
-			query.domainCount()
-		if args.q[0] == 'nameserverCount':
-			query = queries('nameserverCount')
-			query.nameserverCount()
-		if args.q[0] == 'nameserverDump':
-			query = queries('nameserverDump')
-			query.nameserverDump()
-		sys.exit(0)
+    if args.q:
+        if args.q[0] == 'domainCount':
+            query = queries('domainCount')
+            query.domainCount()
+        if args.q[0] == 'nameserverCount':
+            query = queries('nameserverCount')
+            query.nameserverCount()
+        if args.q[0] == 'nameserverDump':
+            query = queries('nameserverDump')
+            query.nameserverDump()
+        sys.exit(0)
 
-	if args.p:
-		rm = purge()
-		rm.domain()
-		sys.exit(0)
+    if args.p:
+        rm = purge()
+        rm.domain()
+        sys.exit(0)
 
-	if args.s:
-		nServer = raw_input('Which nameserver to query for?\n')
-		if args.s[0] == 'gwebtools':
-			scrape = scraper(nServer)
-			scrape.gwebtools()
-		sys.exit(0)
+    if args.s:
+        nServer = raw_input('Which nameserver to query for?\n')
+        if args.s[0] == 'gwebtools':
+            scrape = scraper(nServer)
+            scrape.gwebtools()
+        sys.exit(0)
 
 
 def menu():
-	if len(sys.argv) > 1:
-		pass
-	else:
-		print "The AXFR Toolset"
-		print ""
-		print "Main Options:"
-		print "  Domain List Comparisons: -c"
-		print "  Zonefile DB builder:     -b"
-		print "  DIG_INFOs Merger:        -m"
-		print "  DB query module:         -q"
-		print "    - domainCount            "
-		print "    - nameserverCount        "
-		print "    - nameserverDump         "
-		print "  Purge Domains from DB:   -p"
-		print "  Scrape nameservers:      -s"
-		print "    - gwebtools              "
-		print ""
-		print "    -h, --help         show the help message and exits"
-		sys.exit(0)
+    if len(sys.argv) > 1:
+        pass
+    else:
+        print "The AXFR Toolset"
+        print ""
+        print "Main Options:"
+        print "  Domain List Comparisons: -c"
+        print "  Zonefile DB builder:     -b"
+        print "  DIG_INFOs Merger:        -m"
+        print "  DB query module:         -q"
+        print "    - domainCount            "
+        print "    - nameserverCount        "
+        print "    - nameserverDump         "
+        print "  Purge Domains from DB:   -p"
+        print "  Scrape nameservers:      -s"
+        print "    - gwebtools              "
+        print ""
+        print "    -h, --help         show the help message and exits"
+        sys.exit(0)
 
 
 if __name__ == '__main__':
-	#parser = argparse.ArgumentParser(description='The AXFR Toolset', prog = 'axfr', usage = '%(prog)s [BLAH somethin here]')
-	parser = argparse.ArgumentParser(description='The AXFR Toolset', prog = 'axfr', usage = menu())
-	
-	group = parser.add_mutually_exclusive_group(required = True)
-	group.add_argument('-b',
-		action = 'store_true',
-		help = 'Domain List Comparisons')
-	group.add_argument('-c',
-		action = 'store_true',
-		help = 'Zonefile DB Builder')
-	group.add_argument('-m',
-		action = 'store_true',
-		help = 'DIG_INFOs Merger')
-	group.add_argument('-q',
-		type = str,
-		nargs = 1,
-		choices = ['domainCount', 'nameserverCount', 'nameserverDump'],
-		help = 'DB queries')
-	group.add_argument('-p',
-		action = 'store_true',
-		help = 'Zonefile DB Purger')
-	group.add_argument('-s',
-		type = str,
-		nargs = 1,
-		choices = ['gwebtools'],
-		help = 'Nameserver Scraper')
-	args = parser.parse_args()
-	main(args)
+    parser = argparse.ArgumentParser(description='The AXFR Toolset', prog = 'axfr', usage = menu())
+
+    group = parser.add_mutually_exclusive_group(required = True)
+    group.add_argument('-b',
+        action = 'store_true',
+        help = 'Domain List Comparisons')
+    group.add_argument('-c',
+        action = 'store_true',
+        help = 'Zonefile DB Builder')
+    group.add_argument('-m',
+        action = 'store_true',
+        help = 'DIG_INFOs Merger')
+    group.add_argument('-q',
+        type = str,
+        nargs = 1,
+        choices = ['domainCount', 'nameserverCount', 'nameserverDump'],
+        help = 'DB queries')
+    group.add_argument('-p',
+        action = 'store_true',
+        help = 'Zonefile DB Purger')
+    group.add_argument('-s',
+        type = str,
+        nargs = 1,
+        choices = ['gwebtools'],
+        help = 'Nameserver Scraper')
+    args = parser.parse_args()
+    main(args)
