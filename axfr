@@ -1,12 +1,13 @@
 #!/usr/bin/env python2.7
 
 import argparse, os, sys
-from lib.comparisons import compare
-from lib.db_builder import builder
-from lib.db_purge import purge
-from lib.merger import merger
-from lib.queries import queries
-from lib.scraper import scraper
+from lib.comparisons import Compare
+from lib.db_builder import Builder
+from lib.db_purge import Purge
+from lib.merger import Merger
+from lib.queries import Queries
+from lib.nameserverScraper import nScraper
+from lib.domainScraper import dScraper
 
 def main(args):
     if args.b:
@@ -47,10 +48,23 @@ def main(args):
         sys.exit(0)
 
     if args.s:
-        nServer = raw_input('Which nameserver to query for?\n')
+        ## Set the class
+        if args.s[0] == 'gwebtools' or args.s[0] == 'whois':
+            nServer = raw_input('Which nameserver to query for?\n')
+            scrape = nScraper(nServer)
+        if args.s[0] == 'robtex':
+            dm = raw_input('Which domain to query with?\n')
+            scrape = dScraper(dm)
+
+        ## Domain modules
+        if args.s[0] == 'robtex':
+            scrape.robtex()
+
+        ## Nameserver modules
         if args.s[0] == 'gwebtools':
-            scrape = scraper(nServer)
             scrape.gwebtools()
+        if args.s[0] == 'whois':
+            scrape.whois()
         sys.exit(0)
 
 
@@ -65,12 +79,16 @@ def menu():
         print "  Zonefile DB builder:     -b"
         print "  DIG_INFOs Merger:        -m"
         print "  DB query module:         -q"
-        print "    - domainCount            "
-        print "    - nameserverCount        "
-        print "    - nameserverDump         "
+        print "    domainCount              "
+        print "    nameserverCount          "
+        print "    nameserverDump           "
         print "  Purge Domains from DB:   -p"
-        print "  Scrape nameservers:      -s"
-        print "    - gwebtools              "
+        print "  Scrapers:                -s"
+        print "    * Domains                "
+        print "        robtex               "
+        print "    * Nameservers            "
+        print "        gwebtools            "
+        print "        whois                "
         print ""
         print "    -h, --help         show the help message and exits"
         sys.exit(0)
@@ -100,7 +118,7 @@ if __name__ == '__main__':
     group.add_argument('-s',
         type = str,
         nargs = 1,
-        choices = ['gwebtools'],
+        choices = ['gwebtools', 'robtex', 'whois'],
         help = 'Nameserver Scraper')
     args = parser.parse_args()
     main(args)

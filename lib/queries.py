@@ -1,7 +1,7 @@
 import sqlite3 as lite
 import csv, sys, os, re, shutil
 
-class queries(object):
+class Queries(object):
     ''' This class is used for pre-defined queries to the DB 
 
     __init__() does the job of setting up our environment

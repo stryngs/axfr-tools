@@ -1,7 +1,7 @@
 import sqlite3 as lite
 import csv, sys, os, re, shutil
 
-class purge(object):
+class Purge(object):
     ''' This class is used to purge things from the DB '''
 
     def domain(self):

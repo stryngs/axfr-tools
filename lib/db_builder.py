@@ -1,7 +1,7 @@
 import sqlite3 as lite
 import csv, sys, os, re, shutil, subprocess
 
-class builder(object):
+class Builder(object):
     ''' This class builds or adds on to a pre-existing sqlite3 database '''
 
     def __init__(self):

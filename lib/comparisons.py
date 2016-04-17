@@ -1,6 +1,6 @@
 import os
 
-class compare(object):
+class Compare(object):
     ''' This class is used for comparisons '''
 
     def __init__(self):

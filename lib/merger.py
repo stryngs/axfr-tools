@@ -1,6 +1,6 @@
 import os, re, shutil
 
-class merger(object):
+class Merger(object):
     ''' This class contains methods for merging directories and/or files '''
 
     def __init__(self):
