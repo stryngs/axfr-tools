@@ -11,39 +11,39 @@ from lib.domainScraper import dScraper
 
 def main(args):
     if args.b:
-        build = builder()
+        build = Builder()
         build.parser()
         build.data_creation()
         build.db_mod()
         sys.exit(0)
 
     if args.c:
-        diff = compare()
+        diff = Compare()
         diff.domains()
         sys.exit(0)
 
     if args.m:
         bDir = os.getcwd()
-        diff = compare()
-        combine = merger()
+        diff = Compare()
+        combine = Merger()
         d, f = diff.recurser(bDir)
         combine.digs(d, f)
         sys.exit(0)
 
     if args.q:
         if args.q[0] == 'domainCount':
-            query = queries('domainCount')
+            query = Queries('domainCount')
             query.domainCount()
         if args.q[0] == 'nameserverCount':
-            query = queries('nameserverCount')
+            query = Queries('nameserverCount')
             query.nameserverCount()
         if args.q[0] == 'nameserverDump':
-            query = queries('nameserverDump')
+            query = Queries('nameserverDump')
             query.nameserverDump()
         sys.exit(0)
 
     if args.p:
-        rm = purge()
+        rm = Purge()
         rm.domain()
         sys.exit(0)
 
