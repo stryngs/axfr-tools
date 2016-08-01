@@ -100,10 +100,10 @@ if __name__ == '__main__':
     group = parser.add_mutually_exclusive_group(required = True)
     group.add_argument('-b',
         action = 'store_true',
-        help = 'Domain List Comparisons')
+        help = 'Zonefile DB Builder')
     group.add_argument('-c',
         action = 'store_true',
-        help = 'Zonefile DB Builder')
+        help = 'Domain List Comparisons')
     group.add_argument('-m',
         action = 'store_true',
         help = 'DIG_INFOs Merger')
