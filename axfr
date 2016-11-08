@@ -8,6 +8,7 @@ from lib.merger import Merger
 from lib.queries import Queries
 from lib.nameserverScraper import nScraper
 from lib.domainScraper import dScraper
+from lib.tldScraper import tScraper
 
 def main(args):
     if args.b:
@@ -55,6 +56,9 @@ def main(args):
         if args.s[0] == 'robtex':
             dm = raw_input('Which domain to query with?\n')
             scrape = dScraper(dm)
+        if args.s[0] == 'domaintyper':
+            tld = raw_input('Which TLD to query for?\n')
+            scrape = tScraper(tld)
 
         ## Domain modules
         if args.s[0] == 'robtex':
@@ -65,8 +69,16 @@ def main(args):
             scrape.gwebtools()
         if args.s[0] == 'whois':
             scrape.whois()
-        sys.exit(0)
 
+        ## TLD modules
+        if args.s[0] == 'domaintyper':
+            scrape.domaintyper()
+            for i in scrape.dList:
+                print i
+            print len(scrape.dList)
+
+        ## EOF
+        sys.exit(0)
 
 def menu():
     if len(sys.argv) > 1:
@@ -85,6 +97,7 @@ def menu():
         print "  Purge Domains from DB:   -p"
         print "  Scrapers:                -s"
         print "    * Domains                "
+        print "        domaintyper          "
         print "        robtex               "
         print "    * Nameservers            "
         print "        gwebtools            "
@@ -118,7 +131,7 @@ if __name__ == '__main__':
     group.add_argument('-s',
         type = str,
         nargs = 1,
-        choices = ['gwebtools', 'robtex', 'whois'],
+        choices = ['domaintyper', 'gwebtools', 'robtex', 'whois'],
         help = 'Nameserver Scraper')
     args = parser.parse_args()
     main(args)
