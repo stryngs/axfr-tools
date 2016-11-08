@@ -73,9 +73,6 @@ def main(args):
         ## TLD modules
         if args.s[0] == 'domaintyper':
             scrape.domaintyper()
-            for i in scrape.dList:
-                print i
-            print len(scrape.dList)
 
         ## EOF
         sys.exit(0)
