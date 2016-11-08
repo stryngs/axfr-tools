@@ -132,6 +132,6 @@ if __name__ == '__main__':
         type = str,
         nargs = 1,
         choices = ['domaintyper', 'gwebtools', 'robtex', 'whois'],
-        help = 'Nameserver Scraper')
+        help = 'Scrapers')
     args = parser.parse_args()
     main(args)
