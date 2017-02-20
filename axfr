@@ -1,14 +1,7 @@
 #!/usr/bin/env python2.7
 
 import argparse, os, sys
-from lib.comparisons import Compare
-from lib.db_builder import Builder
-from lib.db_purge import Purge
-from lib.merger import Merger
-from lib.queries import Queries
-from lib.nameserverScraper import nScraper
-from lib.domainScraper import dScraper
-from lib.tldScraper import tScraper
+from axfr_tools import *
 
 def main(args):
     if args.b:
@@ -109,26 +102,31 @@ if __name__ == '__main__':
 
     group = parser.add_mutually_exclusive_group(required = True)
     group.add_argument('-b',
-        action = 'store_true',
-        help = 'Zonefile DB Builder')
+                       action = 'store_true',
+                       help = 'Zonefile DB Builder')
     group.add_argument('-c',
-        action = 'store_true',
-        help = 'Domain List Comparisons')
+                       action = 'store_true',
+                       help = 'Domain List Comparisons')
     group.add_argument('-m',
-        action = 'store_true',
-        help = 'DIG_INFOs Merger')
+                       action = 'store_true',
+                       help = 'DIG_INFOs Merger')
     group.add_argument('-q',
-        type = str,
-        nargs = 1,
-        choices = ['domainCount', 'nameserverCount', 'nameserverDump'],
-        help = 'DB queries')
+                       type = str,
+                       nargs = 1,
+                       choices = ['domainCount',
+                                  'nameserverCount',
+                                  'nameserverDump'],
+                       help = 'DB queries')
     group.add_argument('-p',
-        action = 'store_true',
-        help = 'Zonefile DB Purger')
+                       action = 'store_true',
+                       help = 'Zonefile DB Purger')
     group.add_argument('-s',
-        type = str,
-        nargs = 1,
-        choices = ['domaintyper', 'gwebtools', 'robtex', 'whois'],
-        help = 'Scrapers')
+                       type = str,
+                       nargs = 1,
+                       choices = ['domaintyper',
+                                  'gwebtools',
+                                  'robtex',
+                                  'whois'],
+                       help = 'Scrapers')
     args = parser.parse_args()
     main(args)
