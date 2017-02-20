@@ -74,26 +74,24 @@ def menu():
     if len(sys.argv) > 1:
         pass
     else:
-        print "The AXFR Toolset"
-        print ""
+        print "The AXFR Toolset\n"
         print "Main Options:"
         print "  Domain List Comparisons: -c"
         print "  Zonefile DB builder:     -b"
         print "  DIG_INFOs Merger:        -m"
         print "  DB query module:         -q"
-        print "    domainCount              "
-        print "    nameserverCount          "
-        print "    nameserverDump           "
+        print "    domainCount"
+        print "    nameserverCount"
+        print "    nameserverDump"
         print "  Purge Domains from DB:   -p"
         print "  Scrapers:                -s"
-        print "    * Domains                "
-        print "        domaintyper          "
-        print "        robtex               "
-        print "    * Nameservers            "
-        print "        gwebtools            "
-        print "        whois                "
-        print ""
-        print "    -h, --help         show the help message and exits"
+        print "    * Domains"
+        print "        domaintyper"
+        print "        robtex"
+        print "    * Nameservers"
+        print "        gwebtools"
+        print "        whois\n"
+        print "    -h, --help         show the help message and exits\n"
         sys.exit(0)
 
 
