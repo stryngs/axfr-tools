@@ -2,6 +2,14 @@
 
 import argparse, os, sys
 from axfr_tools import *
+from Queue import Queue
+from threading import Thread
+import threading
+
+#def domainParser(q, d, domain):
+    #print 'doing something with %s' % q.get()
+    #d.dig(domain)
+    #q.task_done()
 
 def main(args):
     if args.b:
@@ -15,6 +23,40 @@ def main(args):
         diff = Compare()
         diff.domains()
         sys.exit(0)
+
+    if args.d:
+        d = Dig()
+        print args.d
+        d.dig(args.d[0])
+        sys.exit(0)
+
+    if args.x:
+        d = Dig()
+        q = Queue(maxsize = 20)
+        with open(args.x, 'r') as iFile:
+            dList = iFile.read().splitlines()
+
+        ### Need a good method to prevent memory exhaustion for large domain lists
+        for i in range(len(dList)):
+            worker = Thread(target = d.xdomainParser, args=(q,))
+            worker.setDaemon(True)
+            worker.start()
+
+        for i in dList:
+            q.put(i)
+        q.join()
+
+    if args.f:
+        d = Dig()
+        maxthreads = 2
+        sema = threading.Semaphore(value=maxthreads)
+        threads = list()
+        with open(args.f, 'r') as iFile:
+            dList = iFile.read().splitlines()
+        for i in dList:
+            thread = threading.Thread(target = d.domainParser, args = (str(i), sema))
+            threads.append(thread)
+            thread.start()
 
     if args.m:
         bDir = os.getcwd()
@@ -105,6 +147,16 @@ if __name__ == '__main__':
     group.add_argument('-c',
                        action = 'store_true',
                        help = 'Domain List Comparisons')
+    group.add_argument('-d',
+                       type = str,
+                       nargs = 1,
+                       help = 'Attempt single host zone transfer')
+    group.add_argument('-f',
+                       type = str,
+                       help = 'Threaded multi-host zone transfer attempt')
+    group.add_argument('-x',
+                       type = str,
+                       help = 'Threaded multi-host zone transfer attempt')
     group.add_argument('-m',
                        action = 'store_true',
                        help = 'DIG_INFOs Merger')

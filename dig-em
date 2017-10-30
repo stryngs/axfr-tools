@@ -10,8 +10,8 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=2.0
-rel_date="24 October 2017"
+current_ver=2.0.2
+rel_date="30 October 2017"
 launch_dir=$(pwd)
 
 ## Set query timeout
@@ -25,13 +25,13 @@ usage--()
 clear
 echo -e "$out\nOptions:$ins
 -f: Ask for the zonefile based on a list of hosts to be parsed
--h: Ask for the zonefile of a single domain
+-d: Ask for the zonefile of a single domain
 
 Examples:$ins
 ./dig-em -f domains.list
     $hdr- Attempt to grab the zonefiles of the domains listed in domains.lst$ins
 
-./dig-em -h foo.com
+./dig-em -d foo.com
     $hdr- Attempt to grab the zonefile for foo.com$rst" 
 exit 1
 }
@@ -55,35 +55,39 @@ site--()
     end_site--()
     {
     if [[ $status -eq 0 ]]; then
-        echo -e "\n\033[1;33mDone!!$hdr\nRequested Information Listed in $out$basedir$rst\n"
+        [[ $sEnv == 'bash' ]] && echo -e "\n\033[1;33mDone!!$hdr\nRequested Information Listed in $out$basedir$rst\n"
         exit 0
     fi
     }
 
 ## Check for the directory
-if [[ -d "$host" ]]; then
-    mkdir $host\_$$
-    basedir=$launch_dir/$host\_$$
+if [[ -d "$domain" ]]; then
+    mkdir $domain\_$$
+    basedir=$launch_dir/$domain\_$$
 else
-    mkdir $host
-    basedir="$launch_dir/$host"
+    mkdir $domain
+    basedir="$launch_dir/$domain"
 fi
 
 ## Create a list of nameservers
-nsLIST="$basedir/$host\_NS-LIST"
-dig "$host" NS +multiline +noall +answer +short | sort | sed 's/\.$//' > "$nsLIST"
-echo ""
+nsLIST="$basedir/$domain\_NS-LIST"
+dig "$domain" NS +multiline +noall +answer +short | sort | sed 's/\.$//' > "$nsLIST"
+[[ $sEnv == 'bash' ]] && echo ""
 
 ## Display the nameservers
-echo -e "\033[1;34mDNS Servers Discovered for $out$host$hdr:\033[1;33m"
-while read line; do
-    echo -e "\033[0m\033[1m[+] $out$line"
-done < "$nsLIST"
+if [[ $sEnv == 'bash' ]]; then
+    echo -e "\033[1;34mDNS Servers Discovered for $out$domain$hdr:\033[1;33m"
+    while read line; do
+        echo -e "\033[0m\033[1m[+] $out$line"
+    done < "$nsLIST"
+fi
 
 ## Launch the inner loop, parsing through individual nameservers
 while read NS_LIST; do
-    echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$host\033[0m\033[1m\n" 
-    (dig @$NS_LIST $host axfr +time=$time +onesoa > $basedir/$NS_LIST\.lst) > /dev/null 2>&1
+    if [[ $sEnv == 'bash' ]]; then
+        echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$domain\033[0m\033[1m\n" 
+    fi
+    (dig @$NS_LIST $domain axfr +time=$time +onesoa > $basedir/$NS_LIST\.lst) > /dev/null 2>&1
     error_check=$(wc -l $basedir/$NS_LIST\.lst | awk '{print $1}')
 
     ## Remove failed results files
@@ -108,7 +112,9 @@ if [[ $status -eq 0 ]]; then
     ## Launch an inner loop declaring successful axfrs
     while read tmp_list; do
         sAxfr=$(echo $tmp_list | awk -F"/" '{print $(NF)}')
-        echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$sAxfr \033[31mFOR \033[1;33m$host\n"
+        if [[ $sEnv == 'bash' ]]; then
+            echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$sAxfr \033[31mFOR \033[1;33m$domain\n"
+        fi
 
     ## Exit the inner loop
     done < "$basedir/tmp_LIST"
@@ -122,8 +128,8 @@ if [[ $status -eq 0 ]]; then
 
     end_site--
 else
-    rm -rf $host
-    echo -e "\n"
+    rm -rf $domain
+    [[ $sEnv == 'bash' ]] && echo -e "\n"
 fi
 }
 
@@ -283,19 +289,19 @@ if [[ -z $1 ]]; then
 fi
 
 if [[ -z $3 ]]; then
-    LIMIT=1
+    sEnv="bash"
 else
-    LIMIT=$3
+    sEnv="python"
 fi
 
-clear
-while getopts "f:g:h:l:s:" opt;do
+[[ $sEnv == 'bash' ]] && clear
+while getopts "f:d:" opt; do
     case "$opt" in
         f) file="$OPTARG"
         sites-- ;;
 
-        h) host="$OPTARG"
-        site-- $host ;;
+        d) domain="$OPTARG"
+        site-- $domain ;;
 
         \?) usage-- ;;
 
@@ -345,6 +351,10 @@ done
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 2.0.2
+    # Removed unneeded echos for python mode
+    # Changed single host axfr to use argument of -d to align with python axfr
+
 ## 2.0
     # Modified site--() to accommodate for external Python threading
 
