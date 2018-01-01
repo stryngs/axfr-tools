@@ -1,15 +1,8 @@
 #!/usr/bin/env python2.7
 
-import argparse, os, sys
+import argparse, os, sys, threading
 from axfr_tools import *
 from Queue import Queue
-from threading import Thread
-import threading
-
-#def domainParser(q, d, domain):
-    #print 'doing something with %s' % q.get()
-    #d.dig(domain)
-    #q.task_done()
 
 def main(args):
     if args.b:
@@ -26,37 +19,39 @@ def main(args):
 
     if args.d:
         d = Dig()
-        print args.d
-        d.dig(args.d[0])
+        d.singleDig(args.d[0])
         sys.exit(0)
-
-    if args.x:
-        d = Dig()
-        q = Queue(maxsize = 20)
-        with open(args.x, 'r') as iFile:
-            dList = iFile.read().splitlines()
-
-        ### Need a good method to prevent memory exhaustion for large domain lists
-        for i in range(len(dList)):
-            worker = Thread(target = d.xdomainParser, args=(q,))
-            worker.setDaemon(True)
-            worker.start()
-
-        for i in dList:
-            q.put(i)
-        q.join()
 
     if args.f:
         d = Dig()
-        maxthreads = 2
-        sema = threading.Semaphore(value=maxthreads)
-        threads = list()
-        with open(args.f, 'r') as iFile:
+        q = Queue(maxsize = 0)
+        nThread = int(args.f[1])
+        
+        ## Load the domain list
+        with open(args.f[0], 'r') as iFile:
             dList = iFile.read().splitlines()
+        
+        ## Pull a worker from the queue, process it
+        def tDig(q):
+            while True:
+                worker = q.get()
+                digThreader(worker)
+                q.task_done()
+
+        ## Perform the dig
+        def digThreader(domain):
+            d.multiDig(domain)
+        
+        ## Load up the threads
+        for i in range(nThread):
+            worker = threading.Thread(target = tDig, args = (q,))
+            worker.setDaemon(True)
+            worker.start()
+        
+        ## Rip through domain list
         for i in dList:
-            thread = threading.Thread(target = d.domainParser, args = (str(i), sema))
-            threads.append(thread)
-            thread.start()
+            q.put(i)
+        q.join()
 
     if args.m:
         bDir = os.getcwd()
@@ -118,15 +113,18 @@ def menu():
     else:
         print "The AXFR Toolset\n"
         print "Main Options:"
-        print "  Domain List Comparisons: -c"
-        print "  Zonefile DB builder:     -b"
-        print "  DIG_INFOs Merger:        -m"
-        print "  DB query module:         -q"
+        print "  Zonefile DB builder:      -b"
+        print "  Domain List Comparisons:  -c"
+        print "  Single Host AXFR attempt: -d"
+        print "  Multi Host AXFR attempt:  -f"
+        print "    -f <list> <thread count>"
+        print "  DIG_INFOs Merger:         -m"
+        print "  DB query module:          -q"
         print "    domainCount"
         print "    nameserverCount"
         print "    nameserverDump"
-        print "  Purge Domains from DB:   -p"
-        print "  Scrapers:                -s"
+        print "  Purge Domains from DB:    -p"
+        print "  Scrapers:                 -s"
         print "    * Domains"
         print "        domaintyper"
         print "        robtex"
@@ -153,10 +151,8 @@ if __name__ == '__main__':
                        help = 'Attempt single host zone transfer')
     group.add_argument('-f',
                        type = str,
-                       help = 'Threaded multi-host zone transfer attempt')
-    group.add_argument('-x',
-                       type = str,
-                       help = 'Threaded multi-host zone transfer attempt')
+                       nargs = 2,
+                       help = 'Multi-host zone transfer attempt [thread count]')
     group.add_argument('-m',
                        action = 'store_true',
                        help = 'DIG_INFOs Merger')

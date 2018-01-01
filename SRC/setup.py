@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = 'axfr-tools',
-    version = '0.4.1',
+    version = '0.4.2',
     author = 'stryngs',
     author_email = 'info@ethicalreporting.org',
     packages = ['axfr_tools', 'axfr_tools.lib'],
