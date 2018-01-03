@@ -10,8 +10,8 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=2.0.4
-rel_date="1 January 2018"
+current_ver=2.0.6
+rel_date="2 January 2018"
 launch_dir=$(pwd)
 
 ## Set query timeout
@@ -106,9 +106,6 @@ done < "$nsLIST"
 ## Check for failures from the inner loop
 ls $basedir/*.lst > /dev/null 2>&1
 status=$?
-
-## Show current progress for Python Threading
-[[ $sEnv == 'pythonM' ]] && echo $domain >> curProgress
 
 if [[ $status -eq 0 ]]; then
     (ls $basedir/*.lst | sed 's/\.lst$//' > $basedir/tmp_LIST) > /dev/null 2>&1
@@ -356,6 +353,9 @@ done
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 2.0.6
+    # Removed curProgress from Python Threading
+
 ## 2.0.4
     # Added NoNS.lst capability for Python Threading
 

@@ -25,11 +25,15 @@ def main(args):
     if args.f:
         d = Dig()
         q = Queue(maxsize = 0)
+        x = 0
         nThread = int(args.f[1])
         
         ## Load the domain list
         with open(args.f[0], 'r') as iFile:
             dList = iFile.read().splitlines()
+        d.tCount = len(dList)
+        d.gCount = d.tCount / nThread
+        d.iCount = 0
         
         ## Pull a worker from the queue, process it
         def tDig(q):
@@ -41,6 +45,11 @@ def main(args):
         ## Perform the dig
         def digThreader(domain):
             d.multiDig(domain)
+            d.counter +=1
+            if d.counter > d.gCount:
+                d.iCount += d.counter - 1
+                d.counter = 0
+                print '%s / %s' % (str(d.iCount), str(d.tCount))
         
         ## Load up the threads
         for i in range(nThread):
