@@ -61,6 +61,21 @@ def main(args):
         for i in dList:
             q.put(i)
         q.join()
+        
+        ## Remove curProgress
+        os.remove('curProgress')
+        
+        ## Gather NoNS.lst domains
+        dList = os.listdir('.')
+        nList = []
+        for i in dList:
+            if '_NoNS.lst' in i:
+                with open(i, 'r') as iFile:
+                    nList.append(iFile.read().splitlines()[0])
+                os.remove(i)
+        with open('NoNS.lst', 'w') as oFile:
+            for i in nList:
+                oFile.write(i + '\n')
 
     if args.m:
         bDir = os.getcwd()

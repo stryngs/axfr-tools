@@ -10,7 +10,7 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=2.0.8
+current_ver=2.2
 rel_date="3 January 2018"
 launch_dir=$(pwd)
 
@@ -36,6 +36,7 @@ Examples:$ins
 exit 1
 }
 
+
 trap--()
 {
 clear
@@ -48,6 +49,32 @@ echo -e "$out\ntail -n $finish $list > new_$list\n\n$inp"
 echo "tail -n $finish $list > new_$list" > $basedir/restart_dirs
 exit 1
 }
+
+
+## Error checks for individual nameserver results
+nsCheck--()
+{
+returnCode="$1"
+nPath="$2"
+
+## Set rmCheck to 0 to keep file
+rmCheck=0
+
+## Deal with non 0 return code
+[[ $returnCode -ne 0 ]] && rmCheck=1
+
+## Delete too small of a file
+error_check=$(wc -l "$nPath" | awk '{print $1}')
+[[ $error_check -le 6 ]] && rmCheck=1
+
+## Check for comms errors that return code 0 doesn't catch
+grep "communications error to" "$nPath" > /dev/null 2>&1
+[[ $? -eq 0 ]] && rmCheck=1
+
+## Keep or remove the file
+[[ rmCheck -eq 1 ]] && rm "$nPath"
+}
+
 
 site--()
 {
@@ -85,22 +112,15 @@ fi
 ## Create a file if the domain doesn't have a Nameserver and we are threading
 if [[ $sEnv = "pythonM" ]]; then
     fSize=$(wc -l "$nsLIST" | awk '{ print $1 }')
-    [[ $fSize -eq 0 ]] && echo "$domain" >> NoNS.lst
+    [[ $fSize -eq 0 ]] && echo "$domain" > $domain\_NoNS.lst
 fi
 
 ## Launch the inner loop, parsing through individual nameservers
 while read NS_LIST; do
     [[ $sEnv == 'bash' ]] && echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$domain\033[0m\033[1m\n"
     (dig @$NS_LIST $domain axfr +time=$time +onesoa > $basedir/$NS_LIST\.lst) > /dev/null 2>&1
-    error_check=$(wc -l $basedir/$NS_LIST\.lst | awk '{print $1}')
-
-    ## Remove failed results files
-    [[ $error_check -le 6 ]] && rm $basedir/$NS_LIST\.lst
-
-    grep "communications error to" $basedir/$NS_LIST\.lst > /dev/null 2>&1
-    [[ $? -eq 0 ]] && rm $basedir/$NS_LIST\.lst
-
-## Exit the inner loop
+    returnCode=$?
+    nsCheck-- "$returnCode" "$basedir/$NS_LIST"\.lst
 done < "$nsLIST"
 
 ## Check for failures from the inner loop
@@ -216,22 +236,11 @@ while read file; do
     done < $file\_NS-LIST
 
     ## Launch the inner loop
-    ## Parse through individual nameservers
     while read NS_LIST; do
         echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$file\033[0m\033[1m" 
         (dig @$NS_LIST $file axfr +time=$time +onesoa > $NS_LIST\.lst) > /dev/null 2>&1
-        error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
-
-        ## Remove failed result files
-        if [[ $error_check -le 6 ]]; then
-            rm $NS_LIST\.lst
-        fi
-
-        grep "communications error to" $NS_LIST\.lst > /dev/null 2>&1
-        if [[ $? -eq 0 ]]; then
-            rm $NS_LIST\.lst
-        fi
-
+        returnCode=$?
+        nsCheck-- "$returnCode" "$NS_LIST"\.lst
         echo ""
 
     ## Exit the inner loop
@@ -356,6 +365,10 @@ done
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 2.2
+    # Created nsCheck()
+    # Modified creation of NoNS.lst for threaded Python usage
+
 ## 2.0.8
     # Added back curProgress for Python Threading
         # Need to add a check for this with axfr so cleanup doesn't get messed up
