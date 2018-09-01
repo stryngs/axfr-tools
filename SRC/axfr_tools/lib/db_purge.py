@@ -12,7 +12,7 @@ class Purge(object):
         dbFile = raw_input('Tgt DB?\n')
         with open(pFile, 'r') as iFile:
             pList = list(set(iFile.read().splitlines()))
-        con = lite.connect(dbFile)
+        con = lite.connect(dbFile, isolation_level = None)
         db = con.cursor()
         count = 1
         

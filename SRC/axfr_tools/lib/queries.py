@@ -75,7 +75,7 @@ class Queries(object):
         '''
         DB SET
         '''
-        self.con = lite.connect(dbName)
+        self.con = lite.connect(dbName, isolation_level = None)
         #con.text_factory = str
         self.db = self.con.cursor()
 

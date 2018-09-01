@@ -18,6 +18,14 @@ class Builder(object):
         ## Create directory list for dDir
         self.dList = os.listdir(self.dDir)
 
+        ## Ensure nTgts.lst is where we think it should be
+        self.nTgts = raw_input('List of Domains Scanned? [%s/nTgts.lst]\n' % self.bDir)
+        if not self.nTgts:
+            self.nTgts = '%s/nTgts.lst' % self.bDir
+        else:
+            print ''
+        
+
         ## Create DB
         self.dbName = raw_input('Desired name for DB? [%s/zones.sqlite]\n' % self.bDir)
         if not self.dbName:
@@ -64,16 +72,15 @@ class Builder(object):
                 print '\nUpdating %s and continuing' % self.dbName
 
         print 'Proceeding to build %s\n' % self.dbName
-        con = lite.connect(self.dbName)
+        con = lite.connect(self.dbName, isolation_level = None)
         db = con.cursor()
-        if con:
+        with con:
             db.execute("CREATE TABLE IF NOT EXISTS axfr(dm TEXT, own TEXT, ttl TEXT, rr TEXT, data TEXT)")
             db.execute("CREATE TABLE IF NOT EXISTS dm2ns(dm TEXT, ns TEXT)")
             db.execute("CREATE TABLE IF NOT EXISTS scanned(dm TEXT, UNIQUE(dm))")
             db.execute("CREATE TABLE IF NOT EXISTS domains(dm TEXT, UNIQUE(dm))")
             db.execute("CREATE TABLE IF NOT EXISTS nameservers(ns TEXT, UNIQUE(ns))")
-            con.close()
-            con = None
+        con = None
 
 
     def parser(self):
@@ -186,7 +193,7 @@ class Builder(object):
 
 
     def db_mod(self):
-        con = lite.connect(self.dbName)
+        con = lite.connect(self.dbName, isolation_level = None)
         con.text_factory = str
         db = con.cursor()
 
@@ -212,7 +219,7 @@ class Builder(object):
             
             ## Insert Tables
             self.dColumn(con, '%s/dm2ns.lst' % self.wDir, 'dm2ns')
-            self.sColumn(db, 'nTgts.lst', 'scanned')
+            self.sColumn(db, self.nTgts, 'scanned')
             self.sColumn(db, '%s/domains.lst' % self.wDir, 'domains')
             self.sColumn(db, '%s/nameservers.lst' % self.wDir, 'nameservers')
 
