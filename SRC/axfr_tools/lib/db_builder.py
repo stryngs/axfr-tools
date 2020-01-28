@@ -24,7 +24,7 @@ class Builder(object):
             self.nTgts = '%s/nTgts.lst' % self.bDir
         else:
             print ''
-        
+
 
         ## Create DB
         self.dbName = raw_input('Desired name for DB? [%s/zones.sqlite]\n' % self.bDir)
@@ -80,14 +80,14 @@ class Builder(object):
             db.execute("CREATE TABLE IF NOT EXISTS scanned(dm TEXT, UNIQUE(dm))")
             db.execute("CREATE TABLE IF NOT EXISTS domains(dm TEXT, UNIQUE(dm))")
             db.execute("CREATE TABLE IF NOT EXISTS nameservers(ns TEXT, UNIQUE(ns))")
-        con = None
+        con.close()
 
 
     def parser(self):
         ''' This function parses the files '''
         ## Ignore any blank lines or ;'s
         expr = re.compile('^;')
-        
+
         ## Concatenate the axfr for each nameserver, for a given domain, to a domain specific file
         with open('%s/axfr.lst' % self.wDir, 'w') as aFile:
             for domain in self.dList:
@@ -193,35 +193,37 @@ class Builder(object):
 
 
     def db_mod(self):
-        con = lite.connect(self.dbName, isolation_level = None)
+        # con = lite.connect(self.dbName, isolation_level = None)
+        con = lite.connect(self.dbName)
         con.text_factory = str
         db = con.cursor()
 
-        with con:
-            ### Insert data table
-            aFile = open('%s/axfr.lst' % self.wDir, 'r')
-            while True:
-                row = aFile.readline().rstrip()
-                if not row:
-                    break
-                try:
-                    dmRow = row.split()[0].lower()
-                    ownRow = row.split()[1].lower()
-                    ttlRow = row.split()[2]
-                    rrRow = row.split()[4]
-                    data = row.split()[5:]
-                    dataRow = ' '.join(map(str, data))
-                except:
-                    print 'Issue with %s' % row
-                    exit(1)
-                db.execute("INSERT INTO axfr VALUES(?, ?, ?, ?, ?);", (dmRow, ownRow, ttlRow, rrRow, dataRow))
-            aFile.close()
-            
-            ## Insert Tables
-            self.dColumn(con, '%s/dm2ns.lst' % self.wDir, 'dm2ns')
-            self.sColumn(db, self.nTgts, 'scanned')
-            self.sColumn(db, '%s/domains.lst' % self.wDir, 'domains')
-            self.sColumn(db, '%s/nameservers.lst' % self.wDir, 'nameservers')
+        ### Insert data table
+        aFile = open('%s/axfr.lst' % self.wDir, 'r')
+        while True:
+            row = aFile.readline().rstrip()
+            if not row:
+                break
+            try:
+                dmRow = row.split()[0].lower()
+                ownRow = row.split()[1].lower()
+                ttlRow = row.split()[2]
+                rrRow = row.split()[4]
+                data = row.split()[5:]
+                dataRow = ' '.join(map(str, data))
+            except:
+                print 'Issue with %s' % row
+                exit(1)
+            db.execute("INSERT INTO axfr VALUES(?, ?, ?, ?, ?);", (dmRow, ownRow, ttlRow, rrRow, dataRow))
+        aFile.close()
+
+        ## Insert Tables
+        self.dColumn(con, '%s/dm2ns.lst' % self.wDir, 'dm2ns')
+        self.sColumn(db, self.nTgts, 'scanned')
+        self.sColumn(db, '%s/domains.lst' % self.wDir, 'domains')
+        self.sColumn(db, '%s/nameservers.lst' % self.wDir, 'nameservers')
+        con.commit()
+        con.close()
 
         ## Remove tmp directory
         shutil.rmtree(self.wDir)

@@ -8,6 +8,7 @@ class dScraper(object):
         self.dm = dm
         self.api = api
 
+
     def robtex(self):
         ''' Reverse domain scraper for robtex.com
 
