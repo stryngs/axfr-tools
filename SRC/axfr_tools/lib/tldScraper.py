@@ -18,7 +18,7 @@ class tScraper(object):
         self.dList = []
         bUrl = 'https://domaintyper.com/top-websites/most-popular-websites-with-' + self.tld + '-domain/page/'
         page = requests.get(bUrl)
-        
+
         ## Obtain count of domains via BS4
         soup = BeautifulSoup(page.content, 'lxml')
         initRip = soup.find('div', {'class': 'headDescription'})
@@ -27,18 +27,18 @@ class tScraper(object):
             domainCount = str(finalRip[1]).replace('<', '').replace('b', '').replace('/', '').replace('>', '').replace(',', '')
         else:
             domainCount = str(finalRip[0]).replace('<', '').replace('b', '').replace('/', '').replace('>', '').replace(',', '')
-        
-        
+
+
         ## Determine pages and deal with accordingly
         totalPages = int(domainCount) / 100
         finalPage = int(domainCount) % 100
-        
+
         ## Determine total pages
         if finalPage:
             endPage = totalPages + 1
         else:
             endPage = totalPages
-        
+
         ## Get users input for what to do
         print '\nTotal Domains:' + ' ' + domainCount
         print 'Final URL is: %s%s' % (bUrl, endPage)
@@ -59,7 +59,7 @@ class tScraper(object):
         tmpY = tmpX.find('tbody')
         tmpZ = tmpY.find_all('tr')
         for i in range(0, len(tmpZ)):
-            self.dList.append(str(tmpZ[int(i)]).split('>')[4].split('<')[0])                        
+            self.dList.append(str(tmpZ[int(i)]).split('>')[4].split('<')[0])
 
         ## Full download
         if not partialList:
@@ -88,7 +88,7 @@ class tScraper(object):
 
         ## Partial download
         else:
-            
+
             ## Deal with more than 1 page
             if endPage > 1:
                 counter = 2

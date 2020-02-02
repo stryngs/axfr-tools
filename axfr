@@ -27,14 +27,14 @@ def main(args):
         q = Queue(maxsize = 0)
         x = 0
         nThread = int(args.f[1])
-        
+
         ## Load the domain list
         with open(args.f[0], 'r') as iFile:
             dList = iFile.read().splitlines()
         d.tCount = len(dList)
         d.gCount = d.tCount / nThread
         d.iCount = 0
-        
+
         ## Pull a worker from the queue, process it
         def tDig(q):
             while True:
@@ -50,21 +50,21 @@ def main(args):
                 d.iCount += d.counter - 1
                 d.counter = 0
                 print '%s / %s' % (str(d.iCount), str(d.tCount))
-        
+
         ## Load up the threads
         for i in range(nThread):
             worker = threading.Thread(target = tDig, args = (q,))
             worker.setDaemon(True)
             worker.start()
-        
+
         ## Rip through domain list
         for i in dList:
             q.put(i)
         q.join()
-        
+
         ## Remove curProgress
         os.remove('curProgress')
-        
+
         ## Gather NoNS.lst domains
         dList = os.listdir('.')
         nList = []
@@ -103,32 +103,17 @@ def main(args):
         sys.exit(0)
 
     if args.s:
-        ## Set the class
-        if args.s[0] == 'gwebtools' or args.s[0] == 'whois':
-            nServer = raw_input('Which nameserver to query for?\n')
-            scrape = nScraper(nServer)
-        if args.s[0] == 'robtex':
-            dm = raw_input('Which domain to query with?\n')
-            scrape = dScraper(dm)
-        if args.s[0] == 'domaintyper':
-            tld = raw_input('Which TLD to query for?\n')
-            scrape = tScraper(tld)
-
-        ## Domain modules
-        if args.s[0] == 'robtex':
-            scrape.robtex()
-
         ## Nameserver modules
         if args.s[0] == 'gwebtools':
+            nServer = raw_input('Which nameserver to query for?\n')
+            scrape = nScraper(nServer)
             scrape.gwebtools()
-        if args.s[0] == 'whois':
-            scrape.whois()
 
         ## TLD modules
         if args.s[0] == 'domaintyper':
+            tld = raw_input('Which TLD to query for?\n')
+            scrape = tScraper(tld)
             scrape.domaintyper()
-
-        ## EOF
         sys.exit(0)
 
 def menu():
@@ -151,10 +136,8 @@ def menu():
         print "  Scrapers:                 -s"
         print "    * Domains"
         print "        domaintyper"
-        print "        robtex"
         print "    * Nameservers"
-        print "        gwebtools"
-        print "        whois\n"
+        print "        gwebtools\n"
         print "    -h, --help         show the help message and exits\n"
         sys.exit(0)
 
@@ -194,9 +177,7 @@ if __name__ == '__main__':
                        type = str,
                        nargs = 1,
                        choices = ['domaintyper',
-                                  'gwebtools',
-                                  'robtex',
-                                  'whois'],
+                                  'gwebtools'],
                        help = 'Scrapers')
     args = parser.parse_args()
     main(args)
