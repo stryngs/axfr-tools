@@ -10,8 +10,6 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=2.2
-rel_date="3 January 2018"
 launch_dir=$(pwd)
 
 ## Set query timeout
@@ -32,7 +30,7 @@ Examples:$ins
     $hdr- Attempt to grab the zonefiles of the domains listed in domains.lst$ins
 
 ./dig-em -d foo.com
-    $hdr- Attempt to grab the zonefile for foo.com$rst" 
+    $hdr- Attempt to grab the zonefile for foo.com$rst"
 exit 1
 }
 
@@ -182,7 +180,7 @@ if [[ $? -ne 0 ]]; then
         *) exit 1 ;;
     esac
 fi
-	
+
 ## We initiate a trap call so that current progress can be notated
 trap trap-- INT
 
@@ -237,7 +235,7 @@ while read file; do
 
     ## Launch the inner loop
     while read NS_LIST; do
-        echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$file\033[0m\033[1m" 
+        echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$file\033[0m\033[1m"
         (dig @$NS_LIST $file axfr +time=$time +onesoa > $NS_LIST\.lst) > /dev/null 2>&1
         returnCode=$?
         nsCheck-- "$returnCode" "$NS_LIST"\.lst

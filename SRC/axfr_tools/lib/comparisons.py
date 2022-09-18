@@ -8,7 +8,7 @@ class Compare(object):
 
     def domains(self):
         ''' SQL style Right join comparison
-        
+
         Consider domains previously scanned as table scanned
         Consider list of domains to scan as table todo
         Both tables have a single column, domain
@@ -17,11 +17,11 @@ class Compare(object):
         RIGHT JOIN todo T
         ON S.domain = T.domain
         WHERE S.domain IS NULL;
-        '''		
+        '''
         ## Create the comparisons to prevent re-digging
-        oFile = raw_input("List of domains previously scanned?\n")
-        nFile = raw_input("List of domains to scan?\n")
-        tFile = raw_input("Output File? [nTgts.lst]\n")
+        oFile = input("List of domains previously scanned?\n")
+        nFile = input("List of domains to scan?\n")
+        tFile = input("Output File? [nTgts.lst]\n")
         if not tFile:
             tFile = 'nTgts.lst'
 

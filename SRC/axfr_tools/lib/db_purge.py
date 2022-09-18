@@ -8,8 +8,8 @@ class Purge(object):
         """This function iterates through a list
         and purges any instances of a domain
         """
-        pFile = raw_input('List of domains to purge?\n')
-        dbFile = raw_input('Tgt DB?\n')
+        pFile = input('List of domains to purge?\n')
+        dbFile = input('Tgt DB?\n')
         with open(pFile, 'r') as iFile:
             pList = list(set(iFile.read().splitlines()))
         con = lite.connect(dbFile, isolation_level = None)    ### Test for speed
@@ -21,7 +21,7 @@ class Purge(object):
             for dm in pList:
 
                 ## Purge the easy stuff
-                print 'Purging %s -- %s' % (count, dm)
+                print(f'Purging {count} -- {dm}')
                 db.execute("DELETE FROM axfr WHERE dm = ?;", (dm,))
                 db.execute("DELETE FROM scanned WHERE dm = ?;", (dm,))
                 db.execute("DELETE FROM domains WHERE dm = ?;", (dm,))
@@ -46,4 +46,4 @@ class Purge(object):
         con.close()
 
         ## Declare complete
-        print 'Finished!\n'
+        print('Finished!\n')

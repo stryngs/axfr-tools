@@ -9,40 +9,40 @@ class Builder(object):
         self.bDir = os.getcwd()
 
         ## Declare the DIG_INFOs directory
-        self.dDir = raw_input('DIG_INFOs Directory? [%s/DIG_INFOs]\n' % self.bDir)
+        self.dDir = input(f'DIG_INFOs Directory? [{self.bDir}/DIG_INFOs]\n')
         if not self.dDir:
-            self.dDir = '%s/DIG_INFOs' % self.bDir
+            self.dDir = f'{self.bDir}/DIG_INFOs'
         else:
-            print ''
+            print('')
 
         ## Create directory list for dDir
         self.dList = os.listdir(self.dDir)
 
         ## Ensure nTgts.lst is where we think it should be
-        self.nTgts = raw_input('List of Domains Scanned? [%s/nTgts.lst]\n' % self.bDir)
+        self.nTgts = input(f'List of Domains Scanned? [{self.bDir}/nTgts.lst]\n')
         if not self.nTgts:
-            self.nTgts = '%s/nTgts.lst' % self.bDir
+            self.nTgts = f'{self.bDir}/nTgts.lst'
         else:
-            print ''
+            print('')
 
 
         ## Create DB
-        self.dbName = raw_input('Desired name for DB? [%s/zones.sqlite]\n' % self.bDir)
+        self.dbName = input(f'Desired name for DB? [{self.bDir}/zones.sqlite]\n')
         if not self.dbName:
-            self.dbName = '%s/zones.sqlite' % self.bDir
+            self.dbName = f'{self.bDir}/zones.sqlite'
         else:
-            print ''
+            print('')
 
         ## Declare the working directory
-        self.wDir = raw_input('Desired name for working directory? [%s/PARSER_FILEs]\n' % self.bDir)
+        self.wDir = input(f'Desired name for working directory? [{self.bDir}/PARSER_FILEs]\n')
         if not self.wDir:
-            self.wDir = '%s/PARSER_FILEs' % self.bDir
+            self.wDir = f'{self.bDir}/PARSER_FILEs'
         else:
-            print ''
+            print('')
 
         ## Check to ensure the working directory doesn't exist yet
         if os.path.isdir(self.wDir):
-            self.wExists = raw_input('%s already exists, remove and continue? [y/N]\n' % self.wDir)
+            self.wExists = input(f'{self.wDir} already exists, remove and continue? [y/N]\n')
             #if not self.wExists:
                 #exit(1)
             if self.wExists == 'n':
@@ -50,18 +50,18 @@ class Builder(object):
             elif self.wExists == 'N':
                 exit(1)
             else:
-                print 'Removing and continuing'
-                print ''
+                print('Removing and continuing')
+                print('')
                 shutil.rmtree(self.wDir)
 
         ## Create working and temporary directory
         os.mkdir(self.wDir)
-        #self.wDir = '%s/PARSER_FILEs' % self.bDir
-        os.mkdir('%s/TMP_FILEs' % self.wDir)
-        self.tDir = '%s/TMP_FILEs' % self.wDir
+        #self.wDir = f'{self.bDir}/PARSER_FILEs'
+        os.mkdir(f'{self.wDir}/TMP_FILEs')
+        self.tDir = f'{self.wDir}/TMP_FILEs'
 
         if os.path.isfile(self.dbName):
-            self.dFile = raw_input('%s already exists\nUpdate and continue? [y/N]\n' % self.dbName)
+            self.dFile = input(f'{self.dbName} already exists\nUpdate and continue? [y/N]\n')
             if not self.dFile:
                 exit(1)
             elif self.dFile == 'n':
@@ -69,9 +69,9 @@ class Builder(object):
             elif self.dFile == 'N':
                 exit(1)
             else:
-                print '\nUpdating %s and continuing' % self.dbName
+                print(f'\nUpdating {self.dbName} and continuing')
 
-        print 'Proceeding to build %s\n' % self.dbName
+        print(f'Proceeding to build {self.dbName}\n')
         con = lite.connect(self.dbName, isolation_level = None)
         db = con.cursor()
         with con:
@@ -89,24 +89,24 @@ class Builder(object):
         expr = re.compile('^;')
 
         ## Concatenate the axfr for each nameserver, for a given domain, to a domain specific file
-        with open('%s/axfr.lst' % self.wDir, 'w') as aFile:
+        with open(f'{self.wDir}/axfr.lst', 'w') as aFile:
             for domain in self.dList:
-                nsList = os.listdir('%s/%s' % (self.dDir, domain))
+                nsList = os.listdir(f'{self.dDir}/{domain}')
 
                 ## Obtain size of list
                 nsListSize = len(nsList)
 
                 ## Make decision for parsing based upon Nameserver quantity
                 if nsListSize > 1:
-                    #print 'Parsing %s' % domain
+                    #print('Parsing {0}'.format(domain))
                     iSet = set()
-                    with open('%s/cFile' % self.tDir, 'w') as oFile:
+                    with open(f'{self.tDir}/cFile', 'w') as oFile:
                         for ns in nsList:
-                            with open('%s/%s/%s' % (self.dDir, domain, ns), 'r') as iFile:
+                            with open(f'{self.dDir}/{domain}/{ns}', 'r') as iFile:
                                 shutil.copyfileobj(iFile, oFile)
 
-                    iFile = open('%s/cFile' % self.tDir, 'r')
-                    with open('%s/fFile' % self.tDir, 'w') as fFile:
+                    iFile = open(f'{self.tDir}/cFile', 'r')
+                    with open(f'{self.tDir}/fFile', 'w') as fFile:
                         for row in iFile.readlines():
                             row = row.strip()
                             iSet.add(row)
@@ -114,19 +114,19 @@ class Builder(object):
                         for i in iList:
                             fFile.write(i + '\n')
 
-                    nServer = '%s/fFile' % self.tDir
+                    nServer = f'{self.tDir}/fFile'
                     nQ = 'multiple'
 
                 else:
-                    #print 'Parsing %s' % domain
+                    # print(f'Parsing {domain}')
                     nServer = nsList[0]
                     nQ = 'single'
 
                 ## Write the files
-                #print 'Writing %s' % domain
+                # print('Writing {domain}')
                 if nQ == 'single':
-                    with open('%s/%s/%s' % (self.dDir, domain, nServer), 'r') as iPut:
-                        with open('%s/%s' % (self.tDir, domain), 'w') as oFile:
+                    with open(f'{self.dDir}/{domain}/{nServer}', 'r') as iPut:
+                        with open(f'{self.tDir}/{domain}', 'w') as oFile:
                             iList = iPut.read().splitlines()
                             for line in iList:
                                 if line and not expr.match(line):
@@ -134,40 +134,40 @@ class Builder(object):
                                     aFile.write(domain + ' ' + line + '\n')
 
                 if nQ == 'multiple':
-                    with open('%s' % nServer, 'r') as iPut:
-                        with open('%s/%s' % (self.tDir, domain), 'w') as oFile:
+                    with open(f'{nServer}', 'r') as iPut:
+                        with open(f'{self.tDir}/{domain}', 'w') as oFile:
                             iList = iPut.read().splitlines()
                             for line in iList:
                                 if line and not expr.match(line):
                                     oFile.write(domain + ' ' + line + '\n')
                                     aFile.write(domain + ' ' + line + '\n')
-                    os.remove('%s/fFile' % self.tDir)
-                    os.remove('%s/cFile' % self.tDir)
+                    os.remove(f'{self.tDir}/fFile')
+                    os.remove(f'{self.tDir}/cFile')
 
 
     def data_creation(self):
         ''' This function creates the lists db-builder needs '''
         ## Remove empty/unneeded files
         for i in os.listdir(self.tDir):
-            sz = os.path.getsize('%s/%s' % (self.tDir, i))
+            sz = os.path.getsize(f'{self.tDir}/{i}')
             if sz == 0:
-                os.remove('%s/%s' % (self.tDir, i))
+                os.remove(f'{self.tDir}/{i}')
 
         ## Reassign dList as a successful list
         dList = os.listdir(self.tDir)
 
         ## Create domains, dm2ns, ns2dm and nameservers lists
-        domainsFile = open('%s/domains.lst' % self.wDir, 'w')
-        dm2nsFile = open('%s/dm2ns.lst' % self.wDir, 'w')
-        nameserversFile = open('%s/nameservers.lst' % self.wDir, 'w')
+        domainsFile = open(f'{self.wDir}/domains.lst', 'w')
+        dm2nsFile = open(f'{self.wDir}/dm2ns.lst', 'w')
+        nameserversFile = open(f'{self.wDir}/nameservers.lst', 'w')
         for domain in dList:
-            #print self.dDir
-            #print domain
-            nsList = os.listdir('%s/%s' % (self.dDir, domain))
-            domainsFile.write('%s' % (domain.lower()) + '\n')
+            #print(self.dDir)
+            #print(domain)
+            nsList = os.listdir(f'{self.dDir}/{domain}')
+            domainsFile.write(f'{domain.lower()}' + '\n')
             for ns in nsList:
-                dm2nsFile.write('%s,%s' % (domain.lower(), ns.lower()) + '\n')
-                nameserversFile.write('%s' % (ns.lower()) + '\n')
+                dm2nsFile.write(f'{domain.lower()},{ns.lower()}' + '\n')
+                nameserversFile.write(f'{ns.lower()}' + '\n')
         dm2nsFile.close()
         domainsFile.close()
         nameserversFile.close()
@@ -181,7 +181,7 @@ class Builder(object):
             iRow = iFile.readline().rstrip()
             if not iRow:
                 break
-            db.execute("INSERT OR IGNORE INTO %s VALUES(?);" % Table, (iRow,))
+            db.execute(f'INSERT OR IGNORE INTO {Table} VALUES(?);', (iRow,))
         iFile.close()
 
 
@@ -189,7 +189,7 @@ class Builder(object):
         ''' Update multiple columns '''
         with open(File, 'r') as iFile:
             rows = csv.reader(iFile, delimiter=',')
-            con.executemany("INSERT INTO '%s' VALUES (?, ?)" % Table, rows)
+            con.executemany(f"INSERT INTO '{Table}' VALUES (?, ?)", rows)
 
 
     def db_mod(self):
@@ -199,7 +199,7 @@ class Builder(object):
         db = con.cursor()
 
         ### Insert data table
-        aFile = open('%s/axfr.lst' % self.wDir, 'r')
+        aFile = open(f'{self.wDir}/axfr.lst', 'r')
         while True:
             row = aFile.readline().rstrip()
             if not row:
@@ -212,16 +212,16 @@ class Builder(object):
                 data = row.split()[5:]
                 dataRow = ' '.join(map(str, data))
             except:
-                print 'Issue with %s' % row
+                print(f'Issue with {row}')
                 exit(1)
             db.execute("INSERT INTO axfr VALUES(?, ?, ?, ?, ?);", (dmRow, ownRow, ttlRow, rrRow, dataRow))
         aFile.close()
 
         ## Insert Tables
-        self.dColumn(con, '%s/dm2ns.lst' % self.wDir, 'dm2ns')
+        self.dColumn(con, f'{self.wDir}/dm2ns.lst', 'dm2ns')
         self.sColumn(db, self.nTgts, 'scanned')
-        self.sColumn(db, '%s/domains.lst' % self.wDir, 'domains')
-        self.sColumn(db, '%s/nameservers.lst' % self.wDir, 'nameservers')
+        self.sColumn(db, f'{self.wDir}/domains.lst', 'domains')
+        self.sColumn(db, f'{self.wDir}/nameservers.lst', 'nameservers')
         con.commit()
         con.close()
 
@@ -229,4 +229,4 @@ class Builder(object):
         shutil.rmtree(self.wDir)
 
         ## Declare complete
-        print 'Finished!\n'
+        print('Finished!\n')

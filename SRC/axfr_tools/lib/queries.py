@@ -2,7 +2,7 @@ import sqlite3 as lite
 import csv, sys, os, re, shutil
 
 class Queries(object):
-    ''' This class is used for pre-defined queries to the DB 
+    ''' This class is used for pre-defined queries to the DB
 
     __init__() does the job of setting up our environment
     To add a module for the queries class:
@@ -18,32 +18,32 @@ class Queries(object):
         ### Set base dir
         bDir = os.getcwd()
         ## Set DB
-        dbName = raw_input('DB to work with? [%s/MASTER.sqlite]\n' % bDir)
+        dbName = input(f'DB to work with? [{bDir}/MASTER.sqlite]\n')
         if not dbName:
-            dbName = '%s/MASTER.sqlite' % bDir
+            dbName = f'{bDir}/MASTER.sqlite'
         else:
-            print ''
+            print('')
 
         '''
         PRIOR EXISTENCE TESTS
         '''
         options = {'nameserverCount', 'domainCount'}
         if aType in options:
-            self.wDir = '%s/queries' % bDir
+            self.wDir = f'{bDir}/queries'
             fName = ''
             if aType == 'domainCount':
-                if os.path.isfile('%s/DomainCounts.lst' % self.wDir):
-                    fName = '%s/DomainCounts.lst' % self.wDir
+                if os.path.isfile(f'{self.wDir}/DomainCounts.lst'):
+                    fName = f'{self.wDir}/DomainCounts.lst'
 
             if aType == 'nameserverCount':
-                if os.path.isfile('%s/NameserverCounts.lst' % self.wDir):
-                    fName = '%s/NameserverCounts.lst' % self.wDir
+                if os.path.isfile(f'{self.wDir}/NameserverCounts.lst'):
+                    fName = f'{self.wDir}/NameserverCounts.lst'
 
             if not os.path.isdir(self.wDir):
                 os.mkdir(self.wDir)
 
             if fName:
-                wExists = raw_input('%s already exists, continue? [y/N]\n' % fName)
+                wExists = input(f'{fName} already exists, continue? [y/N]\n')
                 if not wExists:
                     exit(1)
                 elif wExists == 'n':
@@ -51,14 +51,14 @@ class Queries(object):
                 elif wExists == 'N':
                     exit(1)
                 else:
-                    print '\nRemoving and continuing'
-                    print ''
+                    print('\nRemoving and continuing')
+                    print('')
                     os.remove(fName)
-                
+
         if aType == 'nameserverDump':
-            self.wDir = '%s/queries/nameserverDumps' % bDir
+            self.wDir = f'{bDir}/queries/nameserverDumps'
             if os.path.isdir(self.wDir):
-                wExists = raw_input('%s already exists, continue? [y/N]\n' % self.wDir)
+                wExists = input(f'{self.wDir} already exists, continue? [y/N]\n')
                 if not wExists:
                     exit(1)
                 elif wExists == 'n':
@@ -66,8 +66,8 @@ class Queries(object):
                 elif wExists == 'N':
                     exit(1)
                 else:
-                    print '\nRemoving and continuing'
-                    print ''
+                    print('\nRemoving and continuing')
+                    print('')
                     shutil.rmtree(self.wDir)
             if not os.path.isdir(self.wDir):
                 os.mkdir(self.wDir)
@@ -82,15 +82,15 @@ class Queries(object):
 
     def nameserverDump(self):
         ''' Query and dump DB for a given Nameserver's domains '''
-        nServer = raw_input ('Nameserver to reverse dump?\n')
-        print ''
+        nServer = input('Nameserver to reverse dump?\n')
+        print('')
 
         '''
         GRAB DOMAINS
         '''
         dSet = set()
         with self.con:
-            print 'Querying domains for %s\n' % nServer
+            print(f'Querying domains for {nServer}\n')
             self.db.execute("SELECT dm FROM dm2ns WHERE ns LIKE ?;", (nServer,))
             records = self.db.fetchall()
 
@@ -101,7 +101,7 @@ class Queries(object):
 
             ## List stats
             length = len(dSet)
-            print '%s domains found\n' % length
+            print(f'{length} domains found\n')
             dList = list(dSet)
 
             '''
@@ -109,14 +109,14 @@ class Queries(object):
             '''
             count = 1
             for domain in dList:
-                print 'Querying %s -- %s' % (count, domain)
+                print(f'Querying {count} -- {domain}')
                 self.db.execute("SELECT own, ttl, rr, data FROM axfr WHERE dm = ?;", (domain,))
-                print 'Fetching %s -- %s' % (count, domain)
+                print(f'Fetching {count} -- {domain}')
                 zone = self.db.fetchall()
 
                 ## Convert tuple to string
-                print 'Writing %s -- %s' % (count, domain)
-                with open('%s/%s' % (self.wDir, domain), 'w') as oFile:
+                print(f'Writing {count} -- {domain}')
+                with open(f'{self.wDir}/{domain}', 'w') as oFile:
                     for record in zone:
                         own = str(record).split("'")[1]
                         ttl = str(record).split("'")[3]
@@ -124,11 +124,11 @@ class Queries(object):
                         data = str(record).split("'")[7]
                         oFile.write(own + '\t' + ttl + '\t' + rr + '\t' + data + '\n')
                 count += 1
-                print ''
+                print('')
 
         ## Declare complete
-        print 'Finished!\n'
-        print 'Contents written to %s' % self.wDir
+        print('Finished!\n')
+        print(f'Contents written to {self.wDir}')
 
 
     def nameserverCount(self):
@@ -138,27 +138,27 @@ class Queries(object):
         '''
         tSet = set()
         with self.con:
-            print 'Querying domain counts'
+            print('Querying domain counts')
             self.db.execute("SELECT COUNT(*), ns FROM dm2ns GROUP by ns;")
-            print 'Fetching domains'
+            print('Fetching domains')
             records = self.db.fetchall()
-            
+
             ## Convert tuple to string
             for row in records:
                 count = str(row).split("'")[0].split('(')[1].split(',')[0]
                 ns = str(row).split("'")[1]
-                tSet.add('%s - %s' % (count, ns))
+                tSet.add(f'{count} - {ns}')
             tList = list(tSet)
 
-        print 'Creating list\n'
-        with open('%s/NameserverCounts.lst' % self.wDir, 'w') as oFile:
+        print('Creating list\n')
+        with open(f'{self.wDir}/NameserverCounts.lst', 'w') as oFile:
                 for i in tList:
                     oFile.write(i + '\n')
 
         ## Declare complete
-        print 'Finished!\n'
-        print 'High to low:  sort -g %s/NameserverCounts.lst | tac | less' % self.wDir
-        print 'Low to high:  sort -g %s/NameserverCounts.lst | less\n' % self.wDir
+        print('Finished!\n')
+        print(f'High to low:  sort -g {self.wDir}/NameserverCounts.lst | tac | less')
+        print(f'Low to high:  sort -g {self.wDir}/NameserverCounts.lst | less\n')
 
 
     def domainCount(self):
@@ -169,24 +169,24 @@ class Queries(object):
         '''
         tSet = set()
         with self.con:
-            print 'Querying domain counts'
+            print('Querying domain counts')
             self.db.execute("SELECT COUNT(*), dm FROM axfr GROUP by dm;")
-            print 'Fetching domains'
+            print('Fetching domains')
             records = self.db.fetchall()
-            
+
             ## Convert tuple to string
             for row in records:
                 count = str(row).split("'")[0].split('(')[1].split(',')[0]
                 dm = str(row).split("'")[1]
-                tSet.add('%s - %s' % (count, dm))
+                tSet.add(f'{count} - {dm}')
             tList = list(tSet)
 
-        print 'Creating list\n'
-        with open('%s/DomainCounts.lst' % self.wDir, 'w') as oFile:
+        print('Creating list\n')
+        with open(f'{self.wDir}/DomainCounts.lst', 'w') as oFile:
                 for i in tList:
                     oFile.write(i + '\n')
 
         ## Declare complete
-        print 'Finished!\n'
-        print 'High to low:  sort -g %s/DomainCounts.lst | tac | less' % self.wDir
-        print 'Low to high:  sort -g %s/DomainCounts.lst | less\n' % self.wDir
+        print('Finished!\n')
+        print(f'High to low:  sort -g {self.wDir}/DomainCounts.lst | tac | less')
+        print(f'Low to high:  sort -g {self.wDir}/DomainCounts.lst | less\n')

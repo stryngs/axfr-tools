@@ -72,8 +72,6 @@ Run some queries of course!
 
 - "Give me a list of the number of domains a given nameserver returned results for"
   - ./axfr -q nameserverCount
-    - Nameserver X has Y amount of domains...  Perhaps I should scrape X for more domains?
-      - ./axfr -s gwebtools
 
 - "Create me a directory, containing the zonefiles for domains from a given nameserver"
   - ./axfr -q nameserverDump
@@ -120,6 +118,3 @@ With any proper methodology, a test run should always be done first.  Make a qui
 Place the copy of MASTER.sqlite folder in the same / directory as DIG_INFOs.  Do: <b>./axfr -b</b>.  Follow along with the prompts.  If you were lucky, and got 100% clean zonefiles, it will let you know, if not, it will let you know.  I'll update this readme with how to handle bad imports a little bit later on.  Assuming you received 100% clean, then simply delete that test run, and point <b>axfr -b</b> at the real MASTER.sqlite.
 
 Enjoy!
-
-
-

@@ -48,4 +48,4 @@ class Merger(object):
                 os.rmdir(i)
 
         ## Declare complete
-        print 'Finished!\n'
+        print('Finished!\n')

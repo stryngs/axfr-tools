@@ -1,13 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # Copyright (C) 2016 stryngs.
 
 from setuptools import setup
 
 setup(
     name = 'axfr-tools',
-    version = '0.6.2',
+    version = '0.6.4',
     author = 'stryngs',
-    author_email = 'info@ethicalreporting.org',
+    author_email = 'support@configitnow.com',
     packages = ['axfr_tools', 'axfr_tools.lib'],
     include_package_data = True,
     url = 'https://github.com/stryngs/axfr-tools',

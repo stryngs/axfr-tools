@@ -1,8 +1,8 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/python3
 
 import argparse, os, sys, threading
 from axfr_tools import *
-from Queue import Queue
+from queue import Queue
 
 def main(args):
     if args.b:
@@ -49,7 +49,7 @@ def main(args):
             if d.counter > d.gCount:
                 d.iCount += d.counter - 1
                 d.counter = 0
-                print '%s / %s' % (str(d.iCount), str(d.tCount))
+                print(f'{d.iCount} / {d.tCount}')
 
         ## Load up the threads
         for i in range(nThread):
@@ -102,43 +102,25 @@ def main(args):
         rm.domain()
         sys.exit(0)
 
-    if args.s:
-        ## Nameserver modules
-        if args.s[0] == 'gwebtools':
-            nServer = raw_input('Which nameserver to query for?\n')
-            scrape = nScraper(nServer)
-            scrape.gwebtools()
-
-        ## TLD modules
-        if args.s[0] == 'domaintyper':
-            tld = raw_input('Which TLD to query for?\n')
-            scrape = tScraper(tld)
-            scrape.domaintyper()
-        sys.exit(0)
 
 def menu():
     if len(sys.argv) > 1:
         pass
     else:
-        print "The AXFR Toolset\n"
-        print "Main Options:"
-        print "  Zonefile DB builder:      -b"
-        print "  Domain List Comparisons:  -c"
-        print "  Single Host AXFR attempt: -d"
-        print "  Multi Host AXFR attempt:  -f"
-        print "    -f <list> <thread count>"
-        print "  DIG_INFOs Merger:         -m"
-        print "  DB query module:          -q"
-        print "    domainCount"
-        print "    nameserverCount"
-        print "    nameserverDump"
-        print "  Purge Domains from DB:    -p"
-        print "  Scrapers:                 -s"
-        print "    * Domains"
-        print "        domaintyper"
-        print "    * Nameservers"
-        print "        gwebtools\n"
-        print "    -h, --help         show the help message and exits\n"
+        print("The AXFR Toolset\n")
+        print("Main Options:")
+        print("  Zonefile DB builder:      -b")
+        print("  Domain List Comparisons:  -c")
+        print("  Single Host AXFR attempt: -d")
+        print("  Multi Host AXFR attempt:  -f")
+        print("    -f <list> <thread count>")
+        print("  DIG_INFOs Merger:         -m")
+        print("  DB query module:          -q")
+        print("    domainCount")
+        print("    nameserverCount")
+        print("    nameserverDump")
+        print("  Purge Domains from DB:    -p")
+        print("    -h, --help         show the help message and exits\n")
         sys.exit(0)
 
 
@@ -173,11 +155,5 @@ if __name__ == '__main__':
     group.add_argument('-p',
                        action = 'store_true',
                        help = 'Zonefile DB Purger')
-    group.add_argument('-s',
-                       type = str,
-                       nargs = 1,
-                       choices = ['domaintyper',
-                                  'gwebtools'],
-                       help = 'Scrapers')
     args = parser.parse_args()
     main(args)
