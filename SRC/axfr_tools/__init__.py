@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/python3
 
 from .lib.comparisons import Compare
 from .lib.dig_em import Dig
