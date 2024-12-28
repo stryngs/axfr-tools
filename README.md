@@ -59,13 +59,15 @@ This toolkit is aimed at those who want to see or gather historical records for 
   - `./axfr -q nameserverDump`
 
 
-## Comparing scans and create nTgts.lst
+## Comparing scans and creating a new target list called nTgts.lst
+Why scan the same domain twice?
 ```
+sqlite3 ./example.sqlite3 "SELECT * FROM scanned;" > scanned.lst
 ./axfr -c
   - List of domains previously scanned?
-    - NoNS.lst
+    - scanned.lst
   - List of domains to scan?
     - domains.lst
   - Output File? [nTgts.lst]
-    - <hit enter>
+    - <hit enter or type something else to change the filename>
 ```
