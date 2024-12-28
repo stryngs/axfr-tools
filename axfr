@@ -1,16 +1,19 @@
 #!/usr/bin/python3
 
-import argparse, os, sys, threading
+import argparse
+import os
+import sys
+import threading
 from axfr_tools import *
 from queue import Queue
 
 def main(args):
-    if args.b:
-        build = Builder()
-        build.parser()
-        build.data_creation()
-        build.db_mod()
-        sys.exit(0)
+    # if args.b:
+    #     # build = Builder()
+    #     # build.parser()
+    #     # build.data_creation()
+    #     # build.db_mod()
+    #     sys.exit(0)
 
     if args.c:
         diff = Compare()
@@ -18,72 +21,28 @@ def main(args):
         sys.exit(0)
 
     if args.d:
-        d = Dig()
-        d.singleDig(args.d[0])
+        a = Axfr()
+        a.axfr(args.d[0])
+        a.save_to_db(args.d)
+        a.con.close()
         sys.exit(0)
 
     if args.f:
-        d = Dig()
-        q = Queue(maxsize = 0)
-        x = 0
-        nThread = int(args.f[1])
-
-        ## Load the domain list
-        with open(args.f[0], 'r') as iFile:
-            dList = iFile.read().splitlines()
-        d.tCount = len(dList)
-        d.gCount = d.tCount / nThread
-        d.iCount = 0
-
-        ## Pull a worker from the queue, process it
-        def tDig(q):
-            while True:
-                worker = q.get()
-                digThreader(worker)
-                q.task_done()
-
-        ## Perform the dig
-        def digThreader(domain):
-            d.multiDig(domain)
-            d.counter +=1
-            if d.counter > d.gCount:
-                d.iCount += d.counter - 1
-                d.counter = 0
-                print(f'{d.iCount} / {d.tCount}')
-
-        ## Load up the threads
-        for i in range(nThread):
-            worker = threading.Thread(target = tDig, args = (q,))
-            worker.setDaemon(True)
-            worker.start()
-
-        ## Rip through domain list
-        for i in dList:
-            q.put(i)
-        q.join()
-
-        ## Remove curProgress
-        os.remove('curProgress')
-
-        ## Gather NoNS.lst domains
-        dList = os.listdir('.')
-        nList = []
-        for i in dList:
-            if '_NoNS.lst' in i:
-                with open(i, 'r') as iFile:
-                    nList.append(iFile.read().splitlines()[0])
-                os.remove(i)
-        with open('NoNS.lst', 'w') as oFile:
-            for i in nList:
-                oFile.write(i + '\n')
-
-    if args.m:
-        bDir = os.getcwd()
-        diff = Compare()
-        combine = Merger()
-        d, f = diff.recurser(bDir)
-        combine.digs(d, f)
+        file_path = args.f[0]
+        max_concurrent = int(args.f[1])
+        a = Axfr()
+        db_queue = Queue()
+        a.process_file(file_path, db_queue, a, max_concurrent)
+        a.con.close()
         sys.exit(0)
+
+    # if args.m:
+    #     # bDir = os.getcwd()
+    #     # diff = Compare()
+    #     # combine = Merger()
+    #     # d, f = diff.recurser(bDir)
+    #     # combine.digs(d, f)
+    #     sys.exit(0)
 
     if args.q:
         if args.q[0] == 'domainCount':
@@ -109,12 +68,12 @@ def menu():
     else:
         print("The AXFR Toolset\n")
         print("Main Options:")
-        print("  Zonefile DB builder:      -b")
+        # print("  Zonefile DB builder:      -b")
         print("  Domain List Comparisons:  -c")
         print("  Single Host AXFR attempt: -d")
         print("  Multi Host AXFR attempt:  -f")
         print("    -f <list> <thread count>")
-        print("  DIG_INFOs Merger:         -m")
+        # print("  DIG_INFOs Merger:         -m")
         print("  DB query module:          -q")
         print("    domainCount")
         print("    nameserverCount")
@@ -128,9 +87,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='The AXFR Toolset', prog = 'axfr', usage = menu())
 
     group = parser.add_mutually_exclusive_group(required = True)
-    group.add_argument('-b',
-                       action = 'store_true',
-                       help = 'Zonefile DB Builder')
+    # group.add_argument('-b',
+    #                    action = 'store_true',
+    #                    help = 'Zonefile DB Builder')
     group.add_argument('-c',
                        action = 'store_true',
                        help = 'Domain List Comparisons')
@@ -142,9 +101,9 @@ if __name__ == '__main__':
                        type = str,
                        nargs = 2,
                        help = 'Multi-host zone transfer attempt [thread count]')
-    group.add_argument('-m',
-                       action = 'store_true',
-                       help = 'DIG_INFOs Merger')
+    # group.add_argument('-m',
+    #                    action = 'store_true',
+    #                    help = 'DIG_INFOs Merger')
     group.add_argument('-q',
                        type = str,
                        nargs = 1,
