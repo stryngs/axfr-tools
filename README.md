@@ -59,7 +59,7 @@ This toolkit is aimed at those who want to see or gather historical records for 
   - `./axfr -q nameserverDump`
 
 
-## Comparing scans
+## Comparing scans and create nTgts.lst
 ```
 ./axfr -c
   - List of domains previously scanned?
@@ -67,5 +67,5 @@ This toolkit is aimed at those who want to see or gather historical records for 
   - List of domains to scan?
     - domains.lst
   - Output File? [nTgts.lst]
-    - The default is fine, and <b>axfr -b</b> will "expect" it to be named as such
+    - <hit enter>
 ```
