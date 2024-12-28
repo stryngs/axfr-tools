@@ -13,6 +13,9 @@ class Axfr():
         self.zDict = {}
         self.nDict = {}
         self.db_lock = threading.Lock()
+        self.sCounter = 0
+        self.tCounter = 0
+        self.tCount = 0
         self.con = lite.connect(dbName, check_same_thread = False)
         db = self.con.cursor()
         db.execute("""
@@ -32,6 +35,7 @@ class Axfr():
         """Grab the AXFR and store it"""
         zSet = set()
         try:
+            sAxfr = False
 
             ## Obtain NS and iterate
             ns_answer = dns.resolver.resolve(address, 'NS')
@@ -42,8 +46,9 @@ class Axfr():
                 for ip in ip_answer:
                     try:
                         zone = dns.zone.from_xfr(dns.query.xfr(str(ip), address))
+                        sAxfr = True
 
-                        ## If zone worked, record NS
+                        ## Record NS
                         res = self.nDict.get(address)
                         if res is None:
                             newVal = ['.'.join(server.to_text().split('.')[0:-1])]
@@ -52,6 +57,7 @@ class Axfr():
                             newVal = ['.'.join(server.to_text().split('.')[0:-1])]
                             self.nDict.update({address: res + newVal})
 
+                        ## Parse the zone
                         for host in zone.nodes.keys():
                             node = zone[host]
                             for rdataset in node.rdatasets:
@@ -59,8 +65,7 @@ class Axfr():
                                 record_info = {"own": host.to_text(),
                                                "rr": record_type,
                                                "ttl": rdataset.ttl,
-                                               "data": [],
-                                               "nameserver": server.target.to_text()}
+                                               "data": []}
 
                                 ## Record types
                                 if record_type == "A":
@@ -74,8 +79,7 @@ class Axfr():
                                         info = {"own": host.to_text(),
                                                 "rr": record_type,
                                                 "ttl": rdataset.ttl,
-                                                "data": f'{mx.preference} {mx.exchange}',
-                                                "nameserver": server.target.to_text()}
+                                                "data": f'{mx.preference} {mx.exchange}'}
                                         zSet.add((info.get('own'),
                                                   info.get('type'),
                                                   info.get('ttl'),
@@ -98,10 +102,15 @@ class Axfr():
                                               record_info.get('data')))
                     except Exception as e:
                         continue
+            if sAxfr is True:
+                with self.db_lock:
+                    self.sCounter += 1
         except Exception as e:
             # print(e)
             pass
         self.zDict.update({address: zSet})
+        with self.db_lock:
+            self.tCounter += 1
 
 
     def save_to_db(self, hostname, dbName = 'example.sqlite3'):
@@ -125,6 +134,12 @@ class Axfr():
     def worker(self, db_queue, axfr_instance):
         """Grab the individual AXFR"""
         while True:
+            if axfr_instance.tCounter % axfr_instance.vNum == 0:
+                try:
+                    sPer = (axfr_instance.sCounter / axfr_instance.tCounter) * 100
+                except:
+                    sPer = 0
+                print(f'{axfr_instance.sCounter} | {axfr_instance.tCount - axfr_instance.tCounter} | {sPer:.2f}%')
             hostname = db_queue.get()
             if hostname is None:
                 break
@@ -138,10 +153,21 @@ class Axfr():
         """Process the input and thread it out"""
         with open(file_path, 'r') as file:
             hostnames = file.readlines()
-        for hostname in [hostname.strip() for hostname in hostnames]:
-            db_queue.put(hostname)
+
+        ## Counts
+        axfr_instance.tCount = len(hostnames)
+        if axfr_instance.tCount >= 1000000:
+            axfr_instance.vNum = 10000
+        if axfr_instance.tCount <= 100000:
+            axfr_instance.vNum = 1000
+        if axfr_instance.tCount <= 10000:
+            axfr_instance.vNum = 100
+        if axfr_instance.tCount <= 1000:
+            axfr_instance.vNum = 50
 
         ## Thread it out
+        for hostname in [hostname.strip() for hostname in hostnames]:
+            db_queue.put(hostname)
         threads = []
         for _ in range(max_concurrent):
             t = threading.Thread(target = self.worker, args = (db_queue, axfr_instance))
@@ -154,3 +180,8 @@ class Axfr():
             db_queue.put(None)
         for t in threads:
             t.join()
+
+        ## Final stats
+        print('~~~~~~~~~~~~~~\nFinal stats:')
+        sPer = (axfr_instance.sCounter / axfr_instance.tCounter) * 100
+        print(f'{axfr_instance.sCounter} @ {sPer:.2f}% of {axfr_instance.tCount}')
