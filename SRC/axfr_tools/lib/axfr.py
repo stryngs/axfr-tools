@@ -16,37 +16,55 @@ class Axfr():
         self.sCounter = 0
         self.tCounter = 0
         self.tCount = 0
-        self.con = lite.connect(dbName, check_same_thread = False)
-        db = self.con.cursor()
+        self.iTime = time.time()
+        self.lTime = self.iTime
+        self.db_queue = Queue()
+        con = lite.connect(dbName, check_same_thread = False)
+        db = con.cursor()
         db.execute("""
                    CREATE TABLE IF NOT EXISTS axfr (dm TEXT,
-                                                       own TEXT,
-                                                       ttl INTEGER,
-                                                       rr TEXT,
-                                                       data TEXT)
+                                                    own TEXT,
+                                                    ttl INTEGER,
+                                                    rr TEXT,
+                                                    data TEXT)
                    """)
         db.execute("""
                    CREATE TABLE IF NOT EXISTS dm2ns (dm TEXT, ns TEXT)
                    """)
-        self.con.commit()
+        db.execute("""
+                   CREATE TABLE IF NOT EXISTS domains (dm TEXT)
+                   """)
+        db.execute("""
+                   CREATE TABLE IF NOT EXISTS scanned (dm TEXT)
+                   """)
+        con.commit()
+        con.close()
 
 
     def axfr(self, address):
         """Grab the AXFR and store it"""
+        with self.db_lock:
+            self.tCounter += 1
         zSet = set()
         try:
             sAxfr = False
 
             ## Obtain NS and iterate
             ns_answer = dns.resolver.resolve(address, 'NS')
+            nSeen = False
             for server in ns_answer:
                 
                 ## Rely on IP
                 ip_answer = dns.resolver.resolve(server.target, 'A')
                 for ip in ip_answer:
                     try:
-                        zone = dns.zone.from_xfr(dns.query.xfr(str(ip), address))
+                        outer = dns.query.xfr(str(ip), address, timeout = 3)
+                        zone = dns.zone.from_xfr(outer)
                         sAxfr = True
+                        if nSeen is False:
+                            with self.db_lock:
+                                self.sCounter += 1
+                            nSeen = True
 
                         ## Record NS
                         res = self.nDict.get(address)
@@ -101,87 +119,115 @@ class Axfr():
                                               record_info.get('ttl'),
                                               record_info.get('data')))
                     except Exception as e:
-                        continue
-            if sAxfr is True:
-                with self.db_lock:
-                    self.sCounter += 1
+                        return sAxfr
         except Exception as e:
-            # print(e)
-            pass
+            return sAxfr
         self.zDict.update({address: zSet})
-        with self.db_lock:
-            self.tCounter += 1
+        return sAxfr
 
 
-    def save_to_db(self, hostname, dbName = 'example.sqlite3'):
+    def axfrWrapper(self, hostname, timeout = 3):
+        """Wrapper to run axfr with a timeout"""
+        result = [None]
+
+        def target():
+            result[0] = self.axfr(hostname)
+
+        ## Sub a thread for the axfr
+        thread = threading.Thread(target = target)
+        thread.start()
+        thread.join(timeout)
+
+        ## No zombies
+        if thread.is_alive():
+            return None
+        else:
+            return result[0]
+
+
+    def process_file(self, file_path, max_concurrent):
+        """Process the input and thread it out"""
+        with open(file_path, 'r') as file:
+            hostnames = file.readlines()
+
+        ## Thread it out
+        count = 0
+        for c in hostnames:
+            if len(c) > 0:
+                count += 1
+        self.tCount = count
+        for hostname in [hostname.strip() for hostname in hostnames]:
+            if len(hostname) > 0:
+                self.db_queue.put(hostname)
+        threads = []
+        for _ in range(max_concurrent):
+            t = threading.Thread(target = self.worker)
+            t.start()
+            threads.append(t)
+
+        ## Tidy up
+        for _ in range(max_concurrent):
+            self.db_queue.put(None)
+        self.db_queue.join()
+        for t in threads:
+            t.join()
+
+        ## Final stats
+        try:
+            print('~~~~~~~~~~~~~~\nFinal stats:')
+            sPer = (self.sCounter / self.tCounter) * 100
+            print(f'{self.sCounter} @ {sPer:.2f}% of {self.tCount} in {int(time.time() - self.iTime) / 60} minutes')
+        except:
+            pass
+
+
+    def save_to_db(self, hostname, res, dbName = 'example.sqlite3'):
         """Store the findings"""
         with self.db_lock:
             con = lite.connect(dbName, check_same_thread = False)
             db = con.cursor()
             if type(hostname) == list:
                 hostname = hostname[0]
-            for entry in self.zDict.get(hostname):
-                db.execute('INSERT INTO axfr (dm, own, ttl, rr, data) VALUES (?, ?, ?, ?, ?)', 
-                            (hostname, entry[0], entry[2], entry[1], entry[3]))
+            try:
+                for entry in self.zDict.get(hostname):
+                    db.execute('INSERT INTO axfr (dm, own, ttl, rr, data) VALUES (?, ?, ?, ?, ?)', 
+                                (hostname, entry[0], entry[2], entry[1], entry[3]))
+            except:
+                pass
             if self.nDict.get(hostname) is not None:
                 for entry in self.nDict.get(hostname):
                     db.execute('INSERT INTO dm2ns (dm, ns) VALUES (?, ?)',
                                 (hostname, entry))
+            if res is True:
+                db.execute('INSERT INTO domains (dm) VALUES (?)', (hostname,))
             con.commit()
             con.close()
 
 
-    def worker(self, db_queue, axfr_instance):
+    def worker(self):
         """Grab the individual AXFR"""
         while True:
-            if axfr_instance.tCounter % axfr_instance.vNum == 0:
-                try:
-                    sPer = (axfr_instance.sCounter / axfr_instance.tCounter) * 100
-                except:
-                    sPer = 0
-                print(f'{axfr_instance.sCounter} | {axfr_instance.tCount - axfr_instance.tCounter} | {sPer:.2f}%')
-            hostname = db_queue.get()
+            try:
+                sPer = (self.sCounter / self.tCounter) * 100
+            except:
+                sPer = 0
+            if (time.time() - self.lTime) > 10:
+                print(f'{self.tCount - self.tCounter}/{self.tCount} [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% success so far]')
+                with self.db_lock:
+                    self.lTime = time.time()
+            hostname = self.db_queue.get()
             if hostname is None:
+                self.db_queue.task_done()
                 break
-            axfr_instance.axfr(hostname)
-            axfr_instance.save_to_db(hostname)
+            if len(hostname) > 0:
+                ### Hardcoding here on example.sqlite3, fix later
+                con = lite.connect('example.sqlite3', check_same_thread = False)
+                db = con.cursor()
+                db.execute('INSERT INTO scanned (dm) VALUES (?)', (hostname,))
+                con.commit()
+                con.close()
+                res = self.axfrWrapper(hostname)
+                if res:
+                    self.save_to_db(hostname, res)
             time.sleep(.001)
-            db_queue.task_done()
-
-
-    def process_file(self, file_path, db_queue, axfr_instance, max_concurrent):
-        """Process the input and thread it out"""
-        with open(file_path, 'r') as file:
-            hostnames = file.readlines()
-
-        ## Counts
-        axfr_instance.tCount = len(hostnames)
-        if axfr_instance.tCount >= 1000000:
-            axfr_instance.vNum = 10000
-        if axfr_instance.tCount <= 100000:
-            axfr_instance.vNum = 1000
-        if axfr_instance.tCount <= 10000:
-            axfr_instance.vNum = 100
-        if axfr_instance.tCount <= 1000:
-            axfr_instance.vNum = 50
-
-        ## Thread it out
-        for hostname in [hostname.strip() for hostname in hostnames]:
-            db_queue.put(hostname)
-        threads = []
-        for _ in range(max_concurrent):
-            t = threading.Thread(target = self.worker, args = (db_queue, axfr_instance))
-            t.start()
-            threads.append(t)
-
-        ## Tidy up
-        db_queue.join()
-        for _ in range(max_concurrent):
-            db_queue.put(None)
-        for t in threads:
-            t.join()
-
-        ## Final stats
-        print('~~~~~~~~~~~~~~\nFinal stats:')
-        sPer = (axfr_instance.sCounter / axfr_instance.tCounter) * 100
-        print(f'{axfr_instance.sCounter} @ {sPer:.2f}% of {axfr_instance.tCount}')
+            self.db_queue.task_done()

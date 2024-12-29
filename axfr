@@ -8,13 +8,6 @@ from axfr_tools import *
 from queue import Queue
 
 def main(args):
-    # if args.b:
-    #     # build = Builder()
-    #     # build.parser()
-    #     # build.data_creation()
-    #     # build.db_mod()
-    #     sys.exit(0)
-
     if args.c:
         diff = Compare()
         diff.domains()
@@ -31,18 +24,8 @@ def main(args):
         file_path = args.f[0]
         max_concurrent = int(args.f[1])
         a = Axfr()
-        db_queue = Queue()
-        a.process_file(file_path, db_queue, a, max_concurrent)
-        a.con.close()
+        a.process_file(file_path, max_concurrent)
         sys.exit(0)
-
-    # if args.m:
-    #     # bDir = os.getcwd()
-    #     # diff = Compare()
-    #     # combine = Merger()
-    #     # d, f = diff.recurser(bDir)
-    #     # combine.digs(d, f)
-    #     sys.exit(0)
 
     if args.q:
         if args.q[0] == 'domainCount':
@@ -68,12 +51,10 @@ def menu():
     else:
         print("The AXFR Toolset\n")
         print("Main Options:")
-        # print("  Zonefile DB builder:      -b")
         print("  Domain List Comparisons:  -c")
         print("  Single Host AXFR attempt: -d")
         print("  Multi Host AXFR attempt:  -f")
         print("    -f <list> <thread count>")
-        # print("  DIG_INFOs Merger:         -m")
         print("  DB query module:          -q")
         print("    domainCount")
         print("    nameserverCount")
@@ -87,9 +68,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='The AXFR Toolset', prog = 'axfr', usage = menu())
 
     group = parser.add_mutually_exclusive_group(required = True)
-    # group.add_argument('-b',
-    #                    action = 'store_true',
-    #                    help = 'Zonefile DB Builder')
     group.add_argument('-c',
                        action = 'store_true',
                        help = 'Domain List Comparisons')
@@ -101,9 +79,6 @@ if __name__ == '__main__':
                        type = str,
                        nargs = 2,
                        help = 'Multi-host zone transfer attempt [thread count]')
-    # group.add_argument('-m',
-    #                    action = 'store_true',
-    #                    help = 'DIG_INFOs Merger')
     group.add_argument('-q',
                        type = str,
                        nargs = 1,
