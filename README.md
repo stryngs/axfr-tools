@@ -26,6 +26,14 @@ This toolkit is aimed at those who want to see or gather historical records for 
 | --- | --- |
 | dm | Domain that allowed for an axfr |
 
+`issues`
+
+| column | description |
+| --- | --- |
+| dm | Domain with an issue |
+| ns | NS with an issue |
+| err | Description of the issue |
+
 `nameservers`
 
 | column | description |
