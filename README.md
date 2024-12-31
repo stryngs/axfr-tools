@@ -46,7 +46,7 @@ This toolkit is aimed at those who want to see or gather historical records for 
 | --- | --- |
 | dm | Domain that has been scanned for axfr |
 
-## Obtaining zonefiles
+### Obtaining zonefiles
 
 - `axfr -d example.com`
   - Perform a zonefile transfer attempt against a single domain
@@ -56,7 +56,7 @@ This toolkit is aimed at those who want to see or gather historical records for 
   - Perform a zonefile transfer attempt against a list of domains using 2 threads
   - If successful, the results will be placed in example.sqlite3
 
-## Useful queries
+### Useful queries
 - "Give me a list of the number of rows for a given domain in the axfr table"
   - `./axfr -q domainCount`
 
@@ -67,7 +67,7 @@ This toolkit is aimed at those who want to see or gather historical records for 
   - `./axfr -q nameserverDump`
 
 
-## Comparing scans and creating a new target list called nTgts.lst
+### Comparing scans and creating a new target list called nTgts.lst
 Why scan the same domain twice?
 ```
 sqlite3 ./example.sqlite3 "SELECT * FROM scanned;" > scanned.lst
@@ -78,4 +78,36 @@ sqlite3 ./example.sqlite3 "SELECT * FROM scanned;" > scanned.lst
     - domains.lst
   - Output File? [nTgts.lst]
     - <hit enter or type something else to change the filename>
+```
+
+### Recommended system settings
+The following settings are recommended for the best possible success for retrieving zonefiles.
+
+/etc/security/limits.conf
+```
+* soft nofile 65535
+* hard nofile 65535
+* soft nproc 65535
+* hard nproc 65535
+* soft stack 65536
+* hard stack 65536
+```
+
+/etc/sysctl.conf
+```
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+net.core.somaxconn = 4096
+net.core.netdev_max_backlog = 4096
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+net.ipv4.tcp_syncookies = 1
+net.core.rmem_default = 524288
+net.core.rmem_max = 16777216
+net.core.wmem_default = 524288
+net.core.wmem_max = 16777216
 ```
