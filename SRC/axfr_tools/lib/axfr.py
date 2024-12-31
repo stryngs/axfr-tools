@@ -38,10 +38,13 @@ class Axfr():
                     CREATE TABLE IF NOT EXISTS domains (dm TEXT UNIQUE)
                     """)
             db.execute("""
+                    CREATE TABLE IF NOT EXISTS nameservers (ns TEXT UNIQUE)
+                    """)
+            db.execute("""
                     CREATE TABLE IF NOT EXISTS scanned (dm TEXT UNIQUE)
                     """)
             db.execute("""
-                    CREATE TABLE IF NOT EXISTS issues (dm TEXT, ns TEXT, err TEXT)
+                    CREATE TABLE IF NOT EXISTS issues (dm TEXT, ns TEXT, err TEXT, dsc TEXT)
                     """)
             con.commit()
             con.close()
@@ -59,8 +62,8 @@ class Axfr():
             with self.db_lock:
                 con = lite.connect('example.sqlite3', check_same_thread = False)
                 db = con.cursor()
-                db.execute('INSERT INTO issues (dm, ns, err) VALUES (?, ?, ?)', 
-                            (address, None, str(e)))
+                db.execute('INSERT INTO issues (dm, ns, err, dsc) VALUES (?, ?, ?, ?)', 
+                            (address, None, e.__class__.__name__, str(e)))
                 con.commit()
                 con.close()
 
@@ -70,39 +73,50 @@ class Axfr():
                     ip_answer = dns.resolver.resolve(server.target, 'A')
                     zone = self.axfrWrapper(ip_answer[0], address)
                     if zone[0] is not None:
-                        zSet = self.axfrParser(ip_answer[0], address, server, zone[0])
-                        if zSet is not None:
-                            nSet = nSet|zSet
+
+                        if zone[0][0] is not None:
+                            zSet = self.axfrParser(ip_answer[0], address, server, zone[0][0])
+                            if zSet is not None:
+                                with self.db_lock:
+                                    con = lite.connect('example.sqlite3', check_same_thread = False)
+                                    db = con.cursor()
+                                    try:
+                                        db.execute('INSERT INTO nameservers (ns) VALUES (?)', (server.target.to_text(),))
+                                        con.commit()
+                                    except:
+                                        pass
+                                    con.close()
+                                nSet = nSet|zSet
                     else:
                         if zone[1] == 'alive':
-                            return (False, 'alive')
+                            return (False, 'alive', zone[1])
                         else:
-                            return (False, 'dead')
+                            return (False, 'dead', zone)
             except Exception as e:
                 with self.db_lock:
                     con = lite.connect('example.sqlite3', check_same_thread = False)
                     db = con.cursor()
-                    db.execute('INSERT INTO issues (dm, ns, err) VALUES (?, ?, ?)', 
-                                (address, ','.join([i.target.to_text() for i in ns_answer]), str(e)))
+                    db.execute('INSERT INTO issues (dm, ns, err, dsc) VALUES (?, ?, ?, ?)',
+                                (address, ','.join([i.target.to_text() for i in ns_answer]), e.__class__.__name__, str(e)))
                     con.commit()
                     con.close()
             if len(nSet) > 0:
                 self.zDict.update({address: nSet})
                 return (True, True)
             else:
-                return (False, 1)
+                return (False, 'deny')
         else:
-            return (False, 2)
+            return (False, 'notExist')
 
 
     def axfrGrab(self, ip, address):
         """Query for the zonefile"""
-        qry =  dns.query.xfr(str(ip), address)
+        qry =  dns.query.xfr(str(ip), address, timeout = 3)
         try:
             zone = dns.zone.from_xfr(qry)
         except Exception as E:
-            return None
-        return zone
+            return (None, E)
+        return (zone, True)
 
 
     def axfrParser(self, ip, address, server, zone):
@@ -163,7 +177,7 @@ class Axfr():
         return zSet
 
 
-    def axfrWrapper(self, ip, address, timeout = 10):
+    def axfrWrapper(self, ip, address, timeout = 4):
         """Wrapper to run axfr parser with a timeout"""
         result = [None]
 
@@ -220,7 +234,6 @@ class Axfr():
         ## Deal with any strays
         time.sleep(3)
         os._exit(0)
-        
 
 
     def save_to_db(self, hostname, res, dbName = 'example.sqlite3'):
@@ -258,7 +271,15 @@ class Axfr():
             except:
                 sPer = 0
             if (time.time() - self.lTime) > 10:
-                print(f'{self.tCount - self.tCounter}/{self.tCount} [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% average success]')
+                remainDomains = self.tCount - self.tCounter
+                timeToScan = (time.time() - self.iTime) / self.tCounter
+                tmr = remainDomains * timeToScan
+                if tmr < 60:
+                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% average success] [{tmr:.2f} seconds remaining @ {timeToScan:.2f}/sec]')
+                elif tmr >= 60 and tmr < 3600:
+                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% average success] [{tmr / 60:.2f} minutes remaining @ {timeToScan:.2f}/sec]')
+                else:
+                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% average success] [{tmr / 60 / 60:.2f} hours remaining @ {timeToScan:.2f}/sec]')
                 with self.db_lock:
                     self.lTime = time.time()
             hostname = self.db_queue.get()
@@ -277,16 +298,22 @@ class Axfr():
                         pass
                     con.close()
                 res = self.axfr(hostname)
-                if res[0] is True:
-                    self.save_to_db(hostname, res)
-                else:
+                
+                ### Debug
+                # print(hostname, res)
+
+                try:
                     if res[1] == 'alive':
                         with self.db_lock:
                             con = lite.connect('example.sqlite3', check_same_thread = False)
                             db = con.cursor()
-                            db.execute('INSERT INTO issues (dm, ns, err) VALUES (?, ?, ?)', 
-                                        (hostname, None, 'hungAxfr'))
+                            db.execute('INSERT INTO issues (dm, ns, err, dsc) VALUES (?, ?, ?, ?)', 
+                                        (hostname, None, None, 'hungAxfr'))
                             con.commit()
                             con.close()
+                    elif res[1] == True:
+                        self.save_to_db(hostname, res)
+                except IndexError:
+                    pass
             time.sleep(.001)
             self.db_queue.task_done()

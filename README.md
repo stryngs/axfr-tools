@@ -32,13 +32,14 @@ This toolkit is aimed at those who want to see or gather historical records for 
 | --- | --- |
 | dm | Domain with an issue |
 | ns | NS with an issue |
-| err | Description of the issue |
+| err | Exception |
+| dsc | Description of the exception |
 
 `nameservers`
 
 | column | description |
 | --- | --- |
-| ns | Nameserver that allowed an axfr for >= 1 Domain |
+| ns | Nameserver that performed an axfr |
 
 `scanned`
 
