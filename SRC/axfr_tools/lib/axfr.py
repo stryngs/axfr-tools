@@ -275,11 +275,11 @@ class Axfr():
                 timeToScan = (time.time() - self.iTime) / self.tCounter
                 tmr = remainDomains * timeToScan
                 if tmr < 60:
-                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% average success] [{tmr:.2f} seconds remaining @ {timeToScan:.2f}/sec]')
+                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.3f}% average success] [{tmr:.2f} seconds remaining @ {timeToScan:.3f}/sec]')
                 elif tmr >= 60 and tmr < 3600:
-                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% average success] [{tmr / 60:.2f} minutes remaining @ {timeToScan:.2f}/sec]')
+                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.3f}% average success] [{tmr / 60:.2f} minutes remaining @ {timeToScan:.3f}/sec]')
                 else:
-                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60:.2f} minutes ~ {sPer:.2f}% average success] [{tmr / 60 / 60:.2f} hours remaining @ {timeToScan:.2f}/sec]')
+                    print(f'[{self.tCount - self.tCounter}/{self.tCount}] [{self.sCounter} of {self.tCounter} @ {int(time.time() - self.iTime) / 60 / 60:.2f} hours ~ {sPer:.3f}% average success] [{tmr / 60 / 60:.2f} hours remaining @ {timeToScan:.3f}/sec]')
                 with self.db_lock:
                     self.lTime = time.time()
             hostname = self.db_queue.get()
