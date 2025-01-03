@@ -66,6 +66,26 @@ This toolkit is aimed at those who want to see or gather historical records for 
 - "Create me a directory, containing the zonefiles for domains from a given nameserver"
   - `./axfr -q nameserverDump`
 
+## Statistical queries
+```
+SELECT COUNT(*) FROM axfr;
+SELECT COUNT(*) FROM scanned;
+SELECT COUNT(*) FROM domains;
+SELECT COUNT(*) FROM dm2ns;
+SELECT COUNT(*) FROM nameservers;
+```
+
+## Gleaning info about internal DNS
+```
+CREATE TABLE internal_dns AS SELECT * FROM axfr WHERE rr = 'A' AND ( DATA LIKE '10.%' OR DATA LIKE '172.16.%' OR DATA LIKE '172.17.%' OR DATA LIKE '172.18.%' OR DATA LIKE '172.19.%' OR DATA LIKE '172.20.%' OR DATA LIKE '172.21.%' OR DATA LIKE '172.22.%' OR DATA LIKE '172.23.%' OR DATA LIKE '172.24.%' OR DATA LIKE '172.25.%' OR DATA LIKE '172.26.%' OR DATA LIKE '172.27.%' OR DATA LIKE '172.28.%' OR DATA LIKE '172.29.%' OR DATA LIKE '172.30.%' OR DATA LIKE '172.31.%' OR DATA LIKE '172.32.%' OR DATA LIKE '192.168.%');
+
+CREATE TABLE exposed_dms AS SELECT * FROM axfr WHERE dm IN (SELECT DISTINCT(dm) FROM internal_dns);
+
+CREATE TABLE vuln_dms AS SELECT DISTINCT(DM) FROM internal_dns ORDER BY 1 ASC;
+
+CREATE TABLE exposed_dm_qty AS SELECT COUNT(*), dm FROM exposed_dms GROUP BY dm ORDER BY 1 DESC;
+```
+
 ## Comparing scans and creating a new target list called nTgts.lst
 Why scan the same domain twice?
 ```
