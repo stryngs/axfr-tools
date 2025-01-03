@@ -27,6 +27,21 @@ def main(args):
         a.process_file(file_path, max_concurrent)
         sys.exit(0)
 
+    if args.m:
+        m = Merger()
+        d1 = args.m[0]
+        d2 = args.m[1]
+        d3 = 'example.sqlite3'
+        if d1 == d3 or d2 == d3:
+            print('[!] example.sqlite3 is reserved as an input string, rename the file.')
+            sys.exit(1)
+        try:
+            os.remove('example.sqlite3')
+        except:
+            pass
+        m.merge_databases(d1, d2, d3)
+        sys.exit(0)
+
     if args.q:
         if args.q[0] == 'domainCount':
             query = Queries('domainCount')
@@ -51,21 +66,22 @@ def menu():
     else:
         print("The AXFR Toolset\n")
         print("Main Options:")
-        print("  Domain List Comparisons:  -c")
-        print("  Single Host AXFR attempt: -d")
-        print("  Multi Host AXFR attempt:  -f")
+        print("  Domain List Comparisons:   -c")
+        print("  Single Host AXFR attempt:  -d")
+        print("  Multi Host AXFR attempt:   -f")
+        print("  Merge databases:           -m")
         print("    -f <list> <thread count>")
-        print("  DB query module:          -q")
+        print("  DB query module:           -q")
         print("    domainCount")
         print("    nameserverCount")
         print("    nameserverDump")
-        print("  Purge Domains from DB:    -p")
+        print("  Purge Domains from DB:     -p")
         print("    -h, --help         show the help message and exits\n")
         sys.exit(0)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='The AXFR Toolset', prog = 'axfr', usage = menu())
+    parser = argparse.ArgumentParser(description='The AXFR Toolkit', prog = 'axfr', usage = menu())
 
     group = parser.add_mutually_exclusive_group(required = True)
     group.add_argument('-c',
@@ -79,6 +95,10 @@ if __name__ == '__main__':
                        type = str,
                        nargs = 2,
                        help = 'Multi-host zone transfer attempt [thread count]')
+    group.add_argument('-m',
+                       type = str,
+                       nargs = 2,
+                       help = 'Merge 2 databases [d1] [d2] -> [example.sqlite3]')
     group.add_argument('-q',
                        type = str,
                        nargs = 1,

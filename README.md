@@ -2,7 +2,7 @@
 
 This toolkit is aimed at those who want to see or gather historical records for a given domain.  The concept behind it is that if a zonefile from 2010 exists; even if that organization subsequently updates their Nameserver to prevent Zonefile Transfers in 2015, odds are the organization will not change those pre-existing records.  This can be very useful for someone such as a Pentester tasked with testing various facets of the domain.  It can save precious time with regards to footprinting.
 
-### The database consists of the following tables:
+## The database consists of the following tables
 `axfr`
 
 | column | description |
@@ -47,8 +47,7 @@ This toolkit is aimed at those who want to see or gather historical records for 
 | --- | --- |
 | dm | Domain that has been scanned for axfr |
 
-### Obtaining zonefiles
-
+## Obtaining zonefiles
 - `axfr -d example.com`
   - Perform a zonefile transfer attempt against a single domain
   - If successful, the results will be placed in example.sqlite3
@@ -57,7 +56,7 @@ This toolkit is aimed at those who want to see or gather historical records for 
   - Perform a zonefile transfer attempt against a list of domains using 2 threads
   - If successful, the results will be placed in example.sqlite3
 
-### Useful queries
+## Useful queries
 - "Give me a list of the number of rows for a given domain in the axfr table"
   - `./axfr -q domainCount`
 
@@ -67,8 +66,7 @@ This toolkit is aimed at those who want to see or gather historical records for 
 - "Create me a directory, containing the zonefiles for domains from a given nameserver"
   - `./axfr -q nameserverDump`
 
-
-### Comparing scans and creating a new target list called nTgts.lst
+## Comparing scans and creating a new target list called nTgts.lst
 Why scan the same domain twice?
 ```
 sqlite3 ./example.sqlite3 "SELECT * FROM scanned;" > scanned.lst
@@ -81,7 +79,14 @@ sqlite3 ./example.sqlite3 "SELECT * FROM scanned;" > scanned.lst
     - <hit enter or type something else to change the filename>
 ```
 
-### Recommended system settings
+## Growing the dataset
+To combine collected zones overtime the merger module was created.  Simply call `axfr -m` with the names of two databases you wish to combine into one.  As the output is hardcoded `example.sqlite3` is the created combination and as such must not be an input file.  Assuming you have foo.sqlite3 and bar.sqlite3 as your inputs do:
+```
+axfr -m foo.sqlite3 bar.sqlite3
+```
+example.sqlite3 is created and will retain the data from both foo and bar using a UNION approach so as to cut down on duplications.
+
+## Recommended system settings
 The following settings are recommended for the best possible success for retrieving zonefiles.
 
 /etc/security/limits.conf
@@ -112,3 +117,6 @@ net.core.rmem_max = 16777216
 net.core.wmem_default = 524288
 net.core.wmem_max = 16777216
 ```
+
+## Tips for success
+Testing using the recommended system settings has shown that up to 20 threads can be run across one processor with an average of 8GB system RAM.  This means that on a system with 4 processors you can run 4 instances of axfr with each running up to 20 threads and have a high liklihood that no domains will be missed due to bottlenecks.  Results of course may vary and users are encouraged to provide their feedback in the form of raising an Issue or creating a PR.
