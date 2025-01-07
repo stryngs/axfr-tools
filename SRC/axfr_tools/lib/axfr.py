@@ -11,7 +11,8 @@ from queue import Queue
 
 class Axfr():
     """Grab the zonefile and do something with it"""
-    def __init__(self, dbName = 'example.sqlite3'):
+    def __init__(self, args):
+        self.args = args
         self.zDict = {}
         self.nDict = {}
         self.db_lock = threading.Lock()
@@ -21,8 +22,12 @@ class Axfr():
         self.iTime = time.time()
         self.lTime = self.iTime
         self.db_queue = Queue()
+        if not self.args.d:
+            self.dbName = 'example'
+        else:
+            self.dbName = args.d[0]
         with self.db_lock:
-            con = lite.connect(dbName, check_same_thread = False)
+            con = lite.connect(self.dbName + '.sqlite3', check_same_thread = False)
             db = con.cursor()
             db.execute("""
                     CREATE TABLE IF NOT EXISTS axfr (dm TEXT,
@@ -60,7 +65,7 @@ class Axfr():
             ns_answer = dns.resolver.resolve(address, 'NS')
         except Exception as e:
             with self.db_lock:
-                con = lite.connect('example.sqlite3', check_same_thread = False)
+                con = lite.connect(self.dbName + '.sqlite3', check_same_thread = False)
                 db = con.cursor()
                 db.execute('INSERT INTO issues (dm, ns, err, dsc) VALUES (?, ?, ?, ?)', 
                             (address, None, e.__class__.__name__, str(e)))
@@ -78,7 +83,7 @@ class Axfr():
                             zSet = self.axfrParser(ip_answer[0], address, server, zone[0][0])
                             if zSet is not None:
                                 with self.db_lock:
-                                    con = lite.connect('example.sqlite3', check_same_thread = False)
+                                    con = lite.connect(self.dbName + '.sqlite3', check_same_thread = False)
                                     db = con.cursor()
                                     try:
                                         db.execute('INSERT INTO nameservers (ns) VALUES (?)', (server.target.to_text(),))
@@ -94,7 +99,7 @@ class Axfr():
                             return (False, 'dead', zone)
             except Exception as e:
                 with self.db_lock:
-                    con = lite.connect('example.sqlite3', check_same_thread = False)
+                    con = lite.connect(self.dbName + '.sqlite3', check_same_thread = False)
                     db = con.cursor()
                     db.execute('INSERT INTO issues (dm, ns, err, dsc) VALUES (?, ?, ?, ?)',
                                 (address, ','.join([i.target.to_text() for i in ns_answer]), e.__class__.__name__, str(e)))
@@ -236,11 +241,11 @@ class Axfr():
         os._exit(0)
 
 
-    def save_to_db(self, hostname, res, dbName = 'example.sqlite3'):
+    def save_to_db(self, hostname, res):
         """Store the findings"""
         with self.db_lock:
             self.sCounter += 1
-            con = lite.connect(dbName, check_same_thread = False)
+            con = lite.connect(self.dbName + '.sqlite3', check_same_thread = False)
             db = con.cursor()
             if type(hostname) == list:
                 hostname = hostname[0]
@@ -289,7 +294,7 @@ class Axfr():
             if len(hostname) > 0:
                 ### Hardcoding here on example.sqlite3, fix later
                 with self.db_lock:
-                    con = lite.connect('example.sqlite3', check_same_thread = False)
+                    con = lite.connect(self.dbName + '.sqlite3', check_same_thread = False)
                     db = con.cursor()
                     try:
                         db.execute('INSERT INTO scanned (dm) VALUES (?)', (hostname,))
@@ -305,7 +310,7 @@ class Axfr():
                 try:
                     if res[1] == 'alive':
                         with self.db_lock:
-                            con = lite.connect('example.sqlite3', check_same_thread = False)
+                            con = lite.connect(self.dbName + '.sqlite3', check_same_thread = False)
                             db = con.cursor()
                             db.execute('INSERT INTO issues (dm, ns, err, dsc) VALUES (?, ?, ?, ?)', 
                                         (hostname, None, None, 'hungAxfr'))

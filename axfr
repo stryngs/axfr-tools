@@ -5,6 +5,7 @@ import os
 import sys
 import threading
 from axfr_tools import *
+import sqlite3 as lite
 from queue import Queue
 
 def main(args):
@@ -14,16 +15,23 @@ def main(args):
         sys.exit(0)
 
     if args.d:
-        a = Axfr()
-        a.axfr(args.d[0])
-        a.save_to_db(args.d)
-        a.con.close()
+        a = Axfr(args)
+        con = lite.connect(f'{args.d[0]}.sqlite3', check_same_thread = False)
+        db = con.cursor()
+        try:
+            db.execute('INSERT INTO scanned (dm) VALUES (?)', (args.d[0],))
+            con.commit()
+        except:
+            pass
+        con.close()
+        res = a.axfr(args.d[0])
+        a.save_to_db(args.d[0], res)
         sys.exit(0)
 
     if args.f:
         file_path = args.f[0]
         max_concurrent = int(args.f[1])
-        a = Axfr()
+        a = Axfr(args)
         a.process_file(file_path, max_concurrent)
         sys.exit(0)
 

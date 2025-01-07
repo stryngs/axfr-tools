@@ -25,6 +25,8 @@ class Purge(object):
                 db.execute("DELETE FROM axfr WHERE dm = ?;", (dm,))
                 db.execute("DELETE FROM scanned WHERE dm = ?;", (dm,))
                 db.execute("DELETE FROM domains WHERE dm = ?;", (dm,))
+                db.execute("DELETE FROM nameservers WHERE dm = ?;", (dm,))
+                db.execute("DELETE FROM issues WHERE dm = ?;", (dm,))
 
                 ## Obtain a list from dm2ns
                 q = db.execute("SELECT `ns` FROM `dm2ns` WHERE LOWER(`dm`) = ?;", (dm.lower(),))
