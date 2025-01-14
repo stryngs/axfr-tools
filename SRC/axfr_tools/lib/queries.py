@@ -15,12 +15,10 @@ class Queries(object):
 
     def __init__(self, aType):
         ''' Environment setup '''
-        ### Set base dir
         bDir = os.getcwd()
-        ## Set DB
-        dbName = input(f'DB to work with? [{bDir}/MASTER.sqlite]\n')
+        dbName = input(f'DB to work with? [{bDir}/example.sqlite3]\n')
         if not dbName:
-            dbName = f'{bDir}/MASTER.sqlite'
+            dbName = f'{bDir}/example.sqlite3'
         else:
             print('')
 
@@ -61,22 +59,19 @@ class Queries(object):
                 wExists = input(f'{self.wDir} already exists, continue? [y/N]\n')
                 if not wExists:
                     exit(1)
-                elif wExists == 'n':
-                    exit(1)
-                elif wExists == 'N':
+                elif wExists.lower() == 'n':
                     exit(1)
                 else:
                     print('\nRemoving and continuing')
                     print('')
                     shutil.rmtree(self.wDir)
             if not os.path.isdir(self.wDir):
-                os.mkdir(self.wDir)
+                os.makedirs(self.wDir)
 
         '''
         DB SET
         '''
         self.con = lite.connect(dbName, isolation_level = None)
-        #con.text_factory = str
         self.db = self.con.cursor()
 
 
@@ -110,7 +105,7 @@ class Queries(object):
             count = 1
             for domain in dList:
                 print(f'Querying {count} -- {domain}')
-                self.db.execute("SELECT own, ttl, rr, data FROM axfr WHERE dm = ?;", (domain,))
+                self.db.execute("SELECT rec, ttl, rt, data FROM axfr WHERE dm = ?;", (domain,))
                 print(f'Fetching {count} -- {domain}')
                 zone = self.db.fetchall()
 
@@ -118,15 +113,25 @@ class Queries(object):
                 print(f'Writing {count} -- {domain}')
                 with open(f'{self.wDir}/{domain}', 'w') as oFile:
                     for record in zone:
-                        own = str(record).split("'")[1]
-                        ttl = str(record).split("'")[3]
-                        rr = str(record).split("'")[5]
-                        data = str(record).split("'")[7]
-                        oFile.write(own + '\t' + ttl + '\t' + rr + '\t' + data + '\n')
+                        if record[0] is not None:
+                            rec = record[0]
+                        else:
+                            rec = ''
+                        if record[1] is not None:
+                            ttl = str(record[1])
+                        else:
+                            rec = ''
+                        if record[2] is not None:
+                            rt = record[2]
+                        else:
+                            rt = ''
+                        if record[3] is not None:
+                            data = record[3]
+                        else:
+                            data = ''
+                        oFile.write(rec + '\t' + ttl + '\t' + rt + '\t' + data + '\n')
                 count += 1
                 print('')
-
-        ## Declare complete
         print('Finished!\n')
         print(f'Contents written to {self.wDir}')
 
@@ -154,8 +159,6 @@ class Queries(object):
         with open(f'{self.wDir}/NameserverCounts.lst', 'w') as oFile:
                 for i in tList:
                     oFile.write(i + '\n')
-
-        ## Declare complete
         print('Finished!\n')
         print(f'High to low:  sort -g {self.wDir}/NameserverCounts.lst | tac | less')
         print(f'Low to high:  sort -g {self.wDir}/NameserverCounts.lst | less\n')
@@ -185,8 +188,6 @@ class Queries(object):
         with open(f'{self.wDir}/DomainCounts.lst', 'w') as oFile:
                 for i in tList:
                     oFile.write(i + '\n')
-
-        ## Declare complete
         print('Finished!\n')
         print(f'High to low:  sort -g {self.wDir}/DomainCounts.lst | tac | less')
         print(f'Low to high:  sort -g {self.wDir}/DomainCounts.lst | less\n')
