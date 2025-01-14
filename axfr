@@ -67,6 +67,19 @@ def main(args):
         rm.domain()
         sys.exit(0)
 
+    if args.v:
+        a = Axfr(args)
+        res = a.axfr(args.v[0])
+        if res[0] is None:
+            print(res[1])
+        else:
+            t = set()
+            for i in a.vList:
+                for ii in i:
+                    t.add(ii)
+            a.print_pretty(t)
+        sys.exit(0)
+
 
 def menu():
     if len(sys.argv) > 1:
@@ -84,9 +97,9 @@ def menu():
         print("    nameserverCount")
         print("    nameserverDump")
         print("  Purge Domains from DB:     -p")
+        print("  Verbose AXFR attempt       -v")
         print("    -h, --help         show the help message and exits\n")
         sys.exit(0)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='The AXFR Toolkit', prog = 'axfr', usage = menu())
@@ -117,5 +130,9 @@ if __name__ == '__main__':
     group.add_argument('-p',
                        action = 'store_true',
                        help = 'Zonefile DB Purger')
+    group.add_argument('-v',
+                       type = str,
+                       nargs = 1,
+                       help = 'Attempt single host zone transfer verbosely')
     args = parser.parse_args()
     main(args)
