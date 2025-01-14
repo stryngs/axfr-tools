@@ -8,9 +8,9 @@ This toolkit is aimed at those who want to see or gather historical records for 
 | column | description |
 | --- | --- |
 | dm | Domain the record was pulled for |
-| own | Ownership record |
+| rec | Resource record |
 | ttl | Time to Live |
-| rr | Resource Record Type |
+| rt | Resource Record Type |
 | data | The data |
 
 `dm2ns`
