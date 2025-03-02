@@ -1,6 +1,6 @@
 import sqlite3 as lite
 
-class Merger():
+class Merger:
     """Handles merging two SQLite databases into a new one."""
     
     def get_table_names(self, conn):
@@ -10,20 +10,15 @@ class Merger():
         tables = cursor.fetchall()
         return [table[0] for table in tables]
 
-
     def get_full_table_schema(self, conn, table_name):
         """Retrieve the full schema (CREATE TABLE statement) for a specific table."""
         cursor = conn.cursor()
         cursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table_name}';")
         schema = cursor.fetchone()
-        if schema:
-            return schema[0]
-        else:
-            return None
-
+        return schema[0] if schema else None
 
     def merge_databases(self, db1_path, db2_path, new_db_path):
-        """Merge two databases into a new database."""
+        """Merge two databases into a new database"""
         try:
             with lite.connect(db1_path, timeout=30) as conn1, \
                  lite.connect(db2_path, timeout=30) as conn2, \
@@ -44,37 +39,15 @@ class Merger():
                     create_table_sql = self.get_full_table_schema(conn1, table)
                     if create_table_sql:
                         new_db_conn.execute(create_table_sql)
-                        cursor1 = conn1.cursor()
-                        cursor1.execute(f"SELECT * FROM {table}")
-                        rows = cursor1.fetchall()
-                        for row in rows:
-                            try:
-                                placeholders = ', '.join(['?' for _ in row])
-                                new_db_conn.execute(f"INSERT INTO {table} VALUES ({placeholders})", row)
-                            except lite.IntegrityError as e:
-                                pass
-                            except Exception as e:
-                                print(f"[!] Unexpected error while inserting row into {table} from {db1_path}: {e}")
+                        new_db_conn.execute(f"INSERT INTO {table} SELECT * FROM db1.{table}")
                 
                 ## db2
                 for table in tables_db2:
                     if table in tables_db1:
-                        create_table_sql_db2 = self.get_full_table_schema(conn2, table)
                         create_table_sql_db1 = self.get_full_table_schema(conn1, table)
-                        
-                        ## schema checks
+                        create_table_sql_db2 = self.get_full_table_schema(conn2, table)
                         if create_table_sql_db1 == create_table_sql_db2:
-                            cursor2 = conn2.cursor()
-                            cursor2.execute(f"SELECT * FROM {table}")
-                            rows = cursor2.fetchall()
-                            for row in rows:
-                                try:
-                                    placeholders = ', '.join(['?' for _ in row])
-                                    new_db_conn.execute(f"INSERT INTO {table} VALUES ({placeholders})", row)
-                                except lite.IntegrityError as e:
-                                    pass
-                                except Exception as e:
-                                    print(f"[!] Unexpected error while inserting row into {table} from {db2_path}: {e}")
+                            new_db_conn.execute(f"INSERT OR IGNORE INTO {table} SELECT * FROM db2.{table}")
                         else:
                             print(f"[!] Schema mismatch for table {table} between {db1_path} and {db2_path}. Skipping.")
                     else:
