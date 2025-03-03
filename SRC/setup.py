@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = 'axfr-tools',
-    version = '1.2.2',
+    version = '1.2.4',
     author = 'stryngs',
     author_email = 'info@127.0.0.1',
     packages = ['axfr_tools', 'axfr_tools.lib'],
