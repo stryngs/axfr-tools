@@ -157,44 +157,49 @@ class Axfr():
             node = zone[host]
             for rdataset in node.rdatasets:
                 record_type = dns.rdatatype.to_text(rdataset.rdtype)
-                record_info = {"own": host.to_text(),
-                               "rr": record_type,
-                               "ttl": rdataset.ttl,
-                               "data": []}
 
                 ## Record types
                 if record_type == "A":
                     for ip in rdataset:
-                        record_info["data"] = str(ip)
+                        zSet.add((host.to_text(),
+                                  record_type,
+                                  rdataset.ttl,
+                                  str(ip)))
                 elif record_type == "AAAA":
                     for ip in rdataset:
-                        record_info["data"] = str(ip)
+                        zSet.add((host.to_text(),
+                                  record_type,
+                                  rdataset.ttl,
+                                  str(ip)))
                 elif record_type == "MX":
                     for mx in rdataset:
-                        info = {"own": host.to_text(),
-                                "rr": record_type,
-                                "ttl": rdataset.ttl,
-                                "data": f'{mx.preference} {mx.exchange}'}
-                        zSet.add((info.get('own'),
-                                  info.get('type'),
-                                  info.get('ttl'),
-                                  info.get('data')))
+                        zSet.add((host.to_text(),
+                                  record_type,
+                                  rdataset.ttl,
+                                  f'{mx.preference} {mx.exchange}'))
                 elif record_type == "CNAME":
                     for cname in rdataset:
-                        record_info["data"] = str(cname)
+                        zSet.add((host.to_text(),
+                                  record_type,
+                                  rdataset.ttl,
+                                  str(cname)))
                 elif record_type == "NS":
                     for ns in rdataset:
-                        record_info["data"] = str(ns.target.to_text())
+                        zSet.add((host.to_text(),
+                                  record_type,
+                                  rdataset.ttl,
+                                  str(ns.target.to_text())))
                 elif record_type == "TXT":
                     for txt in rdataset:
-                        record_info["data"] = str(txt)
+                        zSet.add((host.to_text(),
+                                  record_type,
+                                  rdataset.ttl,
+                                  str(txt)))
                 else:
-                    record_info["data"] = str(rdataset)
-                if record_type != 'MX':
-                    zSet.add((record_info.get('own'),
-                              record_info.get('rr'),
-                              record_info.get('ttl'),
-                              record_info.get('data')))
+                    zSet.add((host.to_text(),
+                              record_type,
+                              rdataset.ttl,
+                              str(rdataset)))
         return zSet
 
 
@@ -219,11 +224,11 @@ class Axfr():
 
     def print_pretty(self, t):
         """Format the stdout"""
-        print('Record                                    TTL     Type           Data')
+        print('Record                                    Type      TTL       Data')
         print("=" * 80)
         for entry in t:
             try:
-                rec, ttl, rt, data = entry
+                rec, rt, ttl, data = entry
                 if rec is None:
                     rec = ''
                 if ttl is None:
@@ -232,7 +237,7 @@ class Axfr():
                     rt = ''
                 if data is None:
                     data = ''
-                print(f"{rec:<42}{ttl:<8}{rt:<15}{data}")
+                print(f"{rec:<42}{rt:<10}{ttl:<10}{data}")
             except Exception as E:
                 print(E)
 
